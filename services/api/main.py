@@ -159,6 +159,12 @@ def export_latest_results():
     })
 
     writer.writerow({
+        "metric": "invalid_status",
+        "value": error_counts["invalid_status"],
+        "percentage": ""
+    })
+
+    writer.writerow({
         "metric": "closed_without_score",
         "value": error_counts["closed_without_score"],
         "percentage": ""

@@ -1,16 +1,173 @@
-# Your company context
+# CONTEXT - Data Analysis Utility: Incident Report Processor
 
-**Replace this file** with the CONTEXT for your assigned company:
-
-- **Brasaland** — `CONTEXT-brasaland-briefing.md` (grilled food restaurant chain, Colombia + Florida)
-- **TrackFlow** — `CONTEXT-trackflow-briefing.md` (last-mile delivery and warehouse, Mexico + Spain)
-- **Nexova** — `CONTEXT-nexova-briefing.md` (HR consulting and talent acquisition, Chile + Argentina)
-- **HealthCore** — `CONTEXT-healthcore-briefing.md` (outpatient healthcare clinic network, US + UK)
-
-Your instructor or milestone materials will point you to the correct CONTEXT file. Copy its contents here so that all project work and AI assistance use the same domain data, field names, and constraints.
+## Company: Brasaland
 
 ---
 
-_Until you add your context, keep this placeholder so the repo structure is clear._
+## Your company
 
-_Estas instrucciones también están disponibles en [español](./CONTEXT.es.md)._
+**Brasaland** is a grilled-food restaurant chain with 14 locations across Colombia and Florida (US). You are part of the internal **Brasaland Digital** team, working under **Nicolas Park (CTO)** and in close coordination with **Felipe Guerrero (Operations Director)**.
+
+Operations tracks every operational incident in the chain: equipment failures, supply issues, customer complaints, food-quality incidents, and staff-related situations. Until now, each store manager logged incidents in a shared spreadsheet. That sheet was exported to CSV, and your test file includes **1,000 rows** representing one month of history across all 14 locations.
+
+Your script's goal is to validate and summarize this data before it is used as the basis for the real-time operations dashboard that will fully replace the spreadsheet.
+
+---
+
+## CSV structure
+
+**File name:** `incidents.csv`  
+**Encoding:** UTF-8  
+**Delimiter:** comma (`,`)  
+**Header row:** yes (row 1)
+
+| Field                | Type    | Required | Allowed values / format                            |
+| -------------------- | ------- | -------- | -------------------------------------------------- |
+| `incident_id`        | string  | yes      | Unique ID, format `BRS-XXXXXX` (e.g. `BRS-000001`) |
+| `date`               | string  | yes      | `YYYY-MM-DD`                                       |
+| `location_id`        | string  | yes      | One of: `COL-01` to `COL-10`, `FLA-01` to `FLA-04` |
+| `category`           | string  | yes      | See categories below                               |
+| `description`        | string  | yes      | Free text, minimum 5 characters                    |
+| `status`             | string  | yes      | `OPEN`, `CLOSED`, `DISCARDED`                      |
+| `customer_id`        | string  | no       | Optional. Format `CLI-XXXXXX`. Can be empty        |
+| `satisfaction_score` | integer | no\*     | Integer 1-5. **Required if** `status = CLOSED`     |
+| `reporter_id`        | string  | yes      | Manager ID, format `MGR-XX`                        |
+
+\*`satisfaction_score` is optional in schema, but a `CLOSED` record without it is considered **incomplete**.
+
+### Valid categories
+
+| Code                 | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| `CUSTOMER_COMPLAINT` | Customer complaint (service, wait time, treatment) |
+| `EQUIPMENT`          | Equipment failure or breakdown                     |
+| `SUPPLY`             | Supply issue or stock shortage                     |
+| `FOOD_QUALITY`       | Food quality incident                              |
+| `STAFF`              | Staff-related incident                             |
+
+---
+
+## Invalid record rules
+
+A record must be marked as **invalid** if any of the following applies:
+
+| Rule                                               | Description                                              |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| Missing `location_id`                              | Field is empty or not one of the 14 valid location codes |
+| Missing or invalid `category`                      | Field is empty or not one of the 5 valid categories      |
+| Empty `description`                                | Field is empty or shorter than 5 characters              |
+| Missing `reporter_id`                              | Field is empty                                           |
+| `status = CLOSED` and missing `satisfaction_score` | Closed case without a recorded score                     |
+| `satisfaction_score` out of range                  | Value exists but is not between 1 and 5 (inclusive)      |
+
+Your script must report how many records trigger each rule.
+
+---
+
+## Data distribution (provided test file)
+
+The file `incidents-brasaland.csv` was provided as an attachment (see `incidents-brasaland.csv`). The values below describe its content and are the ones your script must produce exactly.
+
+**Total rows:** 100
+
+**Valid records: 96**
+| Category | Count |
+|---|---|
+| `CUSTOMER_COMPLAINT` | 29 |
+| `EQUIPMENT` | 17 |
+| `SUPPLY` | 22 |
+| `FOOD_QUALITY` | 19 |
+| `STAFF` | 9 |
+
+| Status      | Count |
+| ----------- | ----- |
+| `OPEN`      | 32    |
+| `CLOSED`    | 50    |
+| `DISCARDED` | 14    |
+
+**Invalid records: 4**
+| Triggered rule | Count |
+|---|---|
+| Missing `location_id` | 1 |
+| Missing or invalid `category` | 1 |
+| Empty or too-short `description` | 1 |
+| `status = CLOSED` without `satisfaction_score` | 1 |
+
+**Satisfaction scores (50 closed records)**
+| Score | Count |
+|---|---|
+| 1 | 4 |
+| 2 | 6 |
+| 3 | 12 |
+| 4 | 19 |
+| 5 | 9 |
+Average: **3.46**
+
+---
+
+## Expected output
+
+When the student runs `python analyze.py incidents-brasaland.csv` with the provided file, console output should show these values:
+
+```
+============================================================
+	BRASALAND - INCIDENT REPORT ANALYSIS
+	Source file: incidents-brasaland.csv
+============================================================
+
+TOTAL RECORDS IN FILE .......... 100
+	|- Valid records ................ 96
+	|- Invalid / incomplete .......... 4
+
+INVALID RECORDS BREAKDOWN
+	|- Missing location_id ........... 1
+	|- Invalid or missing category ... 1
+	|- Empty description ............. 1
+	|- Closed case, no score ......... 1
+
+BREAKDOWN BY CATEGORY (valid records)
+	|- CUSTOMER_COMPLAINT ........... 29  (30.2%)
+	|- EQUIPMENT .................... 17  (17.7%)
+	|- SUPPLY ....................... 22  (22.9%)
+	|- FOOD_QUALITY ................. 19  (19.8%)
+	|- STAFF ......................... 9   (9.4%)
+
+BREAKDOWN BY STATUS (valid records)
+	|- OPEN ......................... 32  (33.3%)
+	|- CLOSED ....................... 50  (52.1%)
+	|- DISCARDED .................... 14  (14.6%)
+
+SATISFACTION INDEX (closed cases)
+	Scored cases: 50 of 50
+	Average score: 3.46 / 5.00
+	|- Score 1 (Very dissatisfied) ... 4
+	|- Score 2 (Dissatisfied) ........ 6
+	|- Score 3 (Neutral) ............ 12
+	|- Score 4 (Satisfied) .......... 19
+	|- Score 5 (Very satisfied) ...... 9
+
+============================================================
+Export results to CSV? [y / n]:
+```
+
+Note: Minor output-format differences (spacing, box characters) are acceptable, but all numeric values must match exactly.
+
+---
+
+## Stakeholder note
+
+> **From Nicolas Park (CTO):**
+> "Felipe's team will use this every day. Keep console output clean and fast; they run it in terminal before the morning meeting. CSV export is for Ashley: she needs to paste results into a spreadsheet. Make sure the structure is meaningful: one row per metric, with columns `metric`, `value`, and optional `percentage`."
+
+---
+
+## Repository path
+
+```
+incidents-analysis/CONTEXT-brasaland.md
+```
+
+---
+
+Internal document - 4Geeks Academy · AI Engineering Track  
+For internal use in program project generation
