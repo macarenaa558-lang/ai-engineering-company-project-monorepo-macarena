@@ -66,6 +66,11 @@ def export_results(output_path, analysis):
             "percentage": ""
         },
         {
+            "metric": "invalid_status",
+            "value": error_counts["invalid_status"],
+            "percentage": ""
+        },
+        {
             "metric": "closed_without_score",
             "value": error_counts["closed_without_score"],
             "percentage": ""
@@ -169,6 +174,10 @@ def print_analysis(file_path, analysis):
     print(
         f"  ├─ Missing reporter_id ........... "
         f"{error_counts['missing_reporter']}"
+    )
+    print(
+        f"  ├─ Invalid or missing status ..... "
+        f"{error_counts['invalid_status']}"
     )
     print(
         f"  ├─ Closed case, no score ......... "

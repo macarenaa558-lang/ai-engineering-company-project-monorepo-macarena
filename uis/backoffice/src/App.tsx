@@ -1,4 +1,4 @@
-import { ChangeEvent, DragEvent, useState } from 'react'
+import { useState, type ChangeEvent, type DragEvent } from 'react'
 import './App.css'
 
 type AnalysisResult = {
@@ -10,6 +10,7 @@ type AnalysisResult = {
     invalid_category: number
     empty_description: number
     missing_reporter: number
+    invalid_status: number
     closed_without_score: number
     score_out_of_range: number
   }
@@ -332,6 +333,11 @@ function App() {
                   <div>
                     <span>Missing reporter_id</span>
                     <strong>{analysis.error_counts.missing_reporter}</strong>
+                  </div>
+
+                  <div>
+                    <span>Invalid or missing status</span>
+                    <strong>{analysis.error_counts.invalid_status}</strong>
                   </div>
 
                   <div>
