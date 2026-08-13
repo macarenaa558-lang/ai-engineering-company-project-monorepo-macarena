@@ -8,7 +8,7 @@
 
 **Brasaland** is a grilled-food restaurant chain with 14 locations across Colombia and Florida (US). You are part of the internal **Brasaland Digital** team, working under **Nicolas Park (CTO)** and in close coordination with **Felipe Guerrero (Operations Director)**.
 
-Operations tracks every operational incident in the chain: equipment failures, supply issues, customer complaints, food-quality incidents, and staff-related situations. Until now, each store manager logged incidents in a shared spreadsheet. That sheet was exported to CSV, and your test file includes **1,000 rows** representing one month of history across all 14 locations.
+Operations tracks every operational incident in the chain: equipment failures, supply issues, customer complaints, food-quality incidents, and staff-related situations. Until now, each store manager logged incidents in a shared spreadsheet. That sheet was exported to CSV, and your test file includes **100 rows** representing one month of history across all 14 locations.
 
 Your script's goal is to validate and summarize this data before it is used as the basis for the real-time operations dashboard that will fully replace the spreadsheet.
 
