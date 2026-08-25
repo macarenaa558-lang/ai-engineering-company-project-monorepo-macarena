@@ -5,7 +5,10 @@ from typing import Any
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from services.api.analysis import analyze_records
+from auth import router as auth_router
+from profiles import router as profiles_router
+from users import router as users_router
+from analysis import analyze_records
 
 
 app = FastAPI(
@@ -13,6 +16,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.include_router(users_router)
+app.include_router(profiles_router)
+app.include_router(auth_router)
 
 latest_analysis: dict[str, Any] | None = None
 
