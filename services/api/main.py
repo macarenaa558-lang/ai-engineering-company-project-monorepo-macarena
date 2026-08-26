@@ -5,13 +5,16 @@ from typing import Any
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from services.api.analysis import analyze_records
+from analysis import analyze_records
+from routes.suppliers import router as suppliers_router
 
 
 app = FastAPI(
     title="Brasaland Incident Analysis API",
     version="1.0.0"
 )
+
+app.include_router(suppliers_router)
 
 
 latest_analysis: dict[str, Any] | None = None
