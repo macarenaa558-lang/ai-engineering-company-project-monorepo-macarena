@@ -2,3 +2,4 @@ scripts/incident-analysis-results.csv
 incident-analysis-results.csv
 __pycache__/
 .venv/
+services/api/data/suppliers.json

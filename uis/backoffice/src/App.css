@@ -459,3 +459,245 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Supplier Directory */
+
+.supplier-create-button {
+  margin: 0;
+}
+
+.supplier-filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e1e5e3;
+  border-radius: 12px;
+}
+
+.supplier-filters > div {
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.supplier-filters label,
+.supplier-form label {
+  color: #56615b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.supplier-filters select,
+.supplier-form input,
+.supplier-form select,
+.supplier-form textarea {
+  width: 100%;
+  border: 1px solid #d8ddda;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #27302c;
+}
+
+.supplier-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e1e5e3;
+  border-radius: 12px;
+}
+
+.supplier-form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.supplier-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.supplier-form-wide {
+  grid-column: 1 / -1;
+}
+
+.supplier-form .analyze-button {
+  margin: 0;
+  justify-self: start;
+}
+
+.supplier-error {
+  margin: 0 0 18px;
+}
+
+.supplier-loading {
+  padding: 30px;
+  text-align: center;
+  color: #6c7671;
+  background: #ffffff;
+  border: 1px solid #e1e5e3;
+  border-radius: 12px;
+}
+
+.supplier-table-card {
+  background: #ffffff;
+  border: 1px solid #e1e5e3;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.supplier-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  border-bottom: 1px solid #edf0ee;
+}
+
+.supplier-table-header h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+  color: #252e2a;
+}
+
+.supplier-table-header > strong {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff3dc;
+  color: #9d6716;
+}
+
+.supplier-table-wrapper {
+  overflow-x: auto;
+}
+
+.supplier-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 950px;
+}
+
+.supplier-table th,
+.supplier-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #edf0ee;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.supplier-table th {
+  color: #717d77;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  background: #fafbfa;
+}
+
+.supplier-table td {
+  color: #48534d;
+  font-size: 13px;
+}
+
+.supplier-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.supplier-table td:first-child strong,
+.supplier-table td:first-child span {
+  display: block;
+}
+
+.supplier-table td:first-child strong {
+  color: #26312c;
+  margin-bottom: 4px;
+}
+
+.supplier-table td:first-child span {
+  color: #7c8681;
+  font-size: 11px;
+}
+
+.category-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.category-badges span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #74521e;
+  background: #fff3dc;
+  font-size: 11px;
+}
+
+.supplier-status {
+  display: inline-block;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.supplier-status.active {
+  color: #2f7650;
+  background: #eaf6ef;
+}
+
+.supplier-status.suspended {
+  color: #a43d37;
+  background: #fff0ef;
+}
+
+.supplier-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.supplier-actions button {
+  border: 1px solid #d8ddda;
+  border-radius: 7px;
+  padding: 7px 10px;
+  background: #ffffff;
+  color: #46514b;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.supplier-actions button:hover {
+  background: #f6f7f6;
+}
+
+@media (max-width: 800px) {
+  .supplier-form {
+    grid-template-columns: 1fr;
+  }
+
+  .supplier-form-wide {
+    grid-column: auto;
+  }
+
+  .supplier-filters {
+    flex-direction: column;
+  }
+
+  .supplier-filters > div {
+    min-width: 0;
+  }
+}
