@@ -1,7 +1,7 @@
 [project]
 name = "api"
 version = "0.1.0"
-description = "Add your description here"
+description = "Brasaland API"
 readme = "README.md"
 authors = [
     { name = "macarenaa558@gmail.com", email = "macarenaa558@gmail.com" }
@@ -11,6 +11,7 @@ dependencies = [
     "bcrypt<5",
     "fastapi>=0.141.1",
     "passlib[bcrypt]>=1.7.4",
+    "pydantic>=2.13.4",
     "python-dotenv>=1.2.3",
     "python-jose[cryptography]>=3.5.0",
     "python-multipart>=0.0.32",
@@ -19,13 +20,25 @@ dependencies = [
 ]
 
 [project.scripts]
-api = "api:main"
+seed = "seed:main"
 
 [build-system]
-requires = ["uv_build>=0.12.3,<0.13.0"]
-build-backend = "uv_build"
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+py-modules = [
+    "analysis",
+    "auth",
+    "database",
+    "main",
+    "models",
+    "profiles",
+    "seed",
+    "services",
+    "users",
+]
 
-
-[tool.uv]
-package = false
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["routes*"]

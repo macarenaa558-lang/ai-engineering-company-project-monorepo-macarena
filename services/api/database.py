@@ -11,3 +11,4 @@ db = TinyDB(DATA_DIR / "db.json")
 
 users_table = db.table("users")
 profiles_table = db.table("profiles")
+suppliers_table = db.table("suppliers")

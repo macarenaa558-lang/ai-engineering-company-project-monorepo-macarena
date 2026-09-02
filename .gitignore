@@ -3,6 +3,6 @@ incident-analysis-results.csv
 __pycache__/
 .venv/
 
-
 .env
 data/
+services/api/data/suppliers.json
