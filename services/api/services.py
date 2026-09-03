@@ -1,10 +1,15 @@
 from tinydb import Query
 
-from database import users_table, profiles_table
+from database import (
+    users_table,
+    profiles_table,
+    password_reset_tokens_table,
+)
 
 
 User = Query()
 Profile = Query()
+ResetToken = Query()
 
 
 def get_user_by_id(user_id: str):
@@ -62,3 +67,28 @@ def update_profile(user_id: str, changes: dict):
     )
 
     return get_profile_by_user_id(user_id)
+
+
+def create_password_reset_token(token_data: dict):
+    password_reset_tokens_table.insert(token_data)
+    return token_data
+
+
+def get_password_reset_token(token_hash: str):
+    return password_reset_tokens_table.get(
+        ResetToken.token_hash == token_hash
+    )
+
+
+def mark_password_reset_token_as_used(token_hash: str):
+    password_reset_tokens_table.update(
+        {"used": True},
+        ResetToken.token_hash == token_hash
+    )
+
+
+def invalidate_password_reset_tokens_for_user(user_id: str):
+    password_reset_tokens_table.update(
+        {"used": True},
+        ResetToken.user_id == user_id
+    )
