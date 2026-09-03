@@ -4,6 +4,9 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ChangePassword from "./pages/ChangePassword";
 import { authFetch, isAuthenticated } from "./services/auth";
 import "./App.css";
 
@@ -945,11 +948,24 @@ function App() {
 
       <Route path="/register" element={<Register />} />
 
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       <Route
         path="/account/profile"
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/account/change-password"
+        element={
+          <ProtectedRoute>
+            <ChangePassword />
           </ProtectedRoute>
         }
       />

@@ -1,57 +1,60 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { setToken } from '../services/auth'
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { setToken } from "../services/auth";
 
 function Login() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const passwordResetSuccess = searchParams.get("passwordReset") === "success";
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault()
+    event.preventDefault();
 
-    setError('')
-    setLoading(true)
+    setError("");
+    setLoading(true);
 
-    const formData = new URLSearchParams()
-    formData.append('username', email)
-    formData.append('password', password)
+    const formData = new URLSearchParams();
+    formData.append("username", email);
+    formData.append("password", password);
 
     try {
-      const response = await fetch('/auth/login', {
-        method: 'POST',
+      const response = await fetch("/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: formData,
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          typeof data.detail === 'string'
+          typeof data.detail === "string"
             ? data.detail
-            : 'No se pudo iniciar sesión.',
-        )
+            : "No se pudo iniciar sesión.",
+        );
       }
 
-      setToken(data.access_token)
-      navigate('/')
+      setToken(data.access_token);
+      navigate("/");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : 'Ocurrió un error al iniciar sesión.',
-      )
+          : "Ocurrió un error al iniciar sesión.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="auth-page">
@@ -87,23 +90,29 @@ function Login() {
             />
           </div>
 
+          {passwordResetSuccess && (
+            <div className="success-message">
+              Contraseña actualizada correctamente. Ya podés iniciar sesión.
+            </div>
+          )}
+
           {error && <div className="error-message">{error}</div>}
 
-          <button
-            type="submit"
-            className="auth-submit"
-            disabled={loading}
-          >
-            {loading ? 'Ingresando...' : 'Iniciar sesión'}
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? "Ingresando..." : "Iniciar sesión"}
           </button>
         </form>
+
+        <p className="auth-footer">
+          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+        </p>
 
         <p className="auth-footer">
           ¿No tenés una cuenta? <Link to="/register">Registrate</Link>
         </p>
       </div>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

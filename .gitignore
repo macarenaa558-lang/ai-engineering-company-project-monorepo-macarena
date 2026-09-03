@@ -6,3 +6,4 @@ __pycache__/
 .env
 data/
 services/api/data/suppliers.json*.egg-info/
+api.egg-info/
