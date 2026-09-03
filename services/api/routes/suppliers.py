@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from tinydb import Query
 
+from auth import get_current_user
 from database import suppliers_table
 from models import (
     SupplierCreate,
@@ -28,7 +29,10 @@ def supplier_with_id(document):
 
 
 @router.post("", response_model=SupplierResponse)
-def create_supplier(data: SupplierCreate):
+def create_supplier(
+    data: SupplierCreate,
+    current_user: dict = Depends(get_current_user),
+):
     supplier_data = data.model_dump()
     supplier_data["status"] = data.status.value
     supplier_data["updated_at"] = datetime.now(
@@ -48,6 +52,7 @@ def create_supplier(data: SupplierCreate):
 def list_suppliers(
     country: Optional[str] = None,
     category: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
 ):
     suppliers = suppliers_table.all()
 
@@ -72,7 +77,10 @@ def list_suppliers(
 
 
 @router.get("/{supplier_id}", response_model=SupplierResponse)
-def get_supplier(supplier_id: int):
+def get_supplier(
+    supplier_id: int,
+    current_user: dict = Depends(get_current_user),
+):
     supplier = suppliers_table.get(
         doc_id=supplier_id
     )
@@ -85,10 +93,12 @@ def get_supplier(supplier_id: int):
 
     return supplier_with_id(supplier)
 
+
 @router.patch("/{supplier_id}/rate", response_model=SupplierResponse)
 def update_supplier_rate(
     supplier_id: int,
     data: SupplierRateUpdate,
+    current_user: dict = Depends(get_current_user),
 ):
     supplier = suppliers_table.get(
         doc_id=supplier_id
@@ -121,6 +131,7 @@ def update_supplier_rate(
 def update_supplier_status(
     supplier_id: int,
     data: SupplierStatusUpdate,
+    current_user: dict = Depends(get_current_user),
 ):
     supplier = suppliers_table.get(
         doc_id=supplier_id
@@ -147,7 +158,10 @@ def update_supplier_status(
 
 
 @router.delete("/{supplier_id}")
-def delete_supplier(supplier_id: int):
+def delete_supplier(
+    supplier_id: int,
+    current_user: dict = Depends(get_current_user),
+):
     supplier = suppliers_table.get(
         doc_id=supplier_id
     )
