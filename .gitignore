@@ -2,3 +2,8 @@ scripts/incident-analysis-results.csv
 incident-analysis-results.csv
 __pycache__/
 .venv/
+
+.env
+data/
+services/api/data/suppliers.json*.egg-info/
+api.egg-info/

@@ -1,0 +1,94 @@
+from tinydb import Query
+
+from database import (
+    users_table,
+    profiles_table,
+    password_reset_tokens_table,
+)
+
+
+User = Query()
+Profile = Query()
+ResetToken = Query()
+
+
+def get_user_by_id(user_id: str):
+    return users_table.get(
+        User.id == user_id
+    )
+
+
+def get_user_by_email(email: str):
+    return users_table.get(
+        User.email == email
+    )
+
+
+def get_all_users():
+    return users_table.all()
+
+
+def create_user(user: dict, profile: dict):
+    users_table.insert(user)
+    profiles_table.insert(profile)
+
+    return user
+
+
+def update_user(user_id: str, changes: dict):
+    users_table.update(
+        changes,
+        User.id == user_id
+    )
+
+    return get_user_by_id(user_id)
+
+
+def delete_user(user_id: str):
+    users_table.remove(
+        User.id == user_id
+    )
+
+    profiles_table.remove(
+        Profile.user_id == user_id
+    )
+
+
+def get_profile_by_user_id(user_id: str):
+    return profiles_table.get(
+        Profile.user_id == user_id
+    )
+
+
+def update_profile(user_id: str, changes: dict):
+    profiles_table.update(
+        changes,
+        Profile.user_id == user_id
+    )
+
+    return get_profile_by_user_id(user_id)
+
+
+def create_password_reset_token(token_data: dict):
+    password_reset_tokens_table.insert(token_data)
+    return token_data
+
+
+def get_password_reset_token(token_hash: str):
+    return password_reset_tokens_table.get(
+        ResetToken.token_hash == token_hash
+    )
+
+
+def mark_password_reset_token_as_used(token_hash: str):
+    password_reset_tokens_table.update(
+        {"used": True},
+        ResetToken.token_hash == token_hash
+    )
+
+
+def invalidate_password_reset_tokens_for_user(user_id: str):
+    password_reset_tokens_table.update(
+        {"used": True},
+        ResetToken.user_id == user_id
+    )
