@@ -1,233 +1,244 @@
-import { useEffect, useState } from 'react'
-import type { ChangeEvent, DragEvent, FormEvent } from 'react'
-import './App.css'
+import { useEffect, useState } from "react";
+import type { ChangeEvent, DragEvent, FormEvent } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
+import { authFetch, isAuthenticated } from "./services/auth";
+import "./App.css";
 
 type AnalysisResult = {
-  total_records: number
-  valid_records: number
-  invalid_records: number
+  total_records: number;
+  valid_records: number;
+  invalid_records: number;
   error_counts: {
-    missing_location: number
-    invalid_category: number
-    empty_description: number
-    missing_reporter: number
-    closed_without_score: number
-    score_out_of_range: number
-  }
-  category_counts: Record<string, number>
-  status_counts: Record<string, number>
-  scored_cases: number
-  closed_cases: number
-  average_score: number
-  score_counts: Record<string, number>
-}
+    missing_location: number;
+    invalid_category: number;
+    empty_description: number;
+    missing_reporter: number;
+    closed_without_score: number;
+    score_out_of_range: number;
+  };
+  category_counts: Record<string, number>;
+  status_counts: Record<string, number>;
+  scored_cases: number;
+  closed_cases: number;
+  average_score: number;
+  score_counts: Record<string, number>;
+};
 
 type Supplier = {
-  id: number
-  name: string
-  country: 'Colombia' | 'USA'
-  categories: string[]
-  rate_per_unit: number
-  currency: 'COP' | 'USD'
-  updated_at: string
-  status: 'active' | 'suspended'
-  contact_email?: string | null
-  notes?: string | null
-}
+  id: number;
+  name: string;
+  country: "Colombia" | "USA";
+  categories: string[];
+  rate_per_unit: number;
+  currency: "COP" | "USD";
+  updated_at: string;
+  status: "active" | "suspended";
+  contact_email?: string | null;
+  notes?: string | null;
+};
 
 type SupplierForm = {
-  name: string
-  country: 'Colombia' | 'USA'
-  categories: string
-  rate_per_unit: string
-  currency: 'COP' | 'USD'
-  status: 'active' | 'suspended'
-  contact_email: string
-  notes: string
-}
+  name: string;
+  country: "Colombia" | "USA";
+  categories: string;
+  rate_per_unit: string;
+  currency: "COP" | "USD";
+  status: "active" | "suspended";
+  contact_email: string;
+  notes: string;
+};
 
 const VALID_CATEGORIES = [
-  'carne',
-  'verduras_y_hortalizas',
-  'salsas_y_condimentos',
-  'bebidas',
-  'packaging',
-  'productos_limpieza',
-  'lacteos',
-  'carbon_y_combustible',
-]
+  "carne",
+  "verduras_y_hortalizas",
+  "salsas_y_condimentos",
+  "bebidas",
+  "packaging",
+  "productos_limpieza",
+  "lacteos",
+  "carbon_y_combustible",
+];
 
-function App() {
-  const [section, setSection] = useState<'incidents' | 'suppliers'>('incidents')
+function Backoffice() {
+  const navigate = useNavigate();
+  const [section, setSection] = useState<"incidents" | "suppliers">(
+    "incidents",
+  );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [supplierLoading, setSupplierLoading] = useState(false)
-  const [supplierError, setSupplierError] = useState('')
-  const [countryFilter, setCountryFilter] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [showSupplierForm, setShowSupplierForm] = useState(false)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierLoading, setSupplierLoading] = useState(false);
+  const [supplierError, setSupplierError] = useState("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [showSupplierForm, setShowSupplierForm] = useState(false);
 
   const [supplierForm, setSupplierForm] = useState<SupplierForm>({
-    name: '',
-    country: 'Colombia',
-    categories: 'carne',
-    rate_per_unit: '',
-    currency: 'COP',
-    status: 'active',
-    contact_email: '',
-    notes: '',
-  })
+    name: "",
+    country: "Colombia",
+    categories: "carne",
+    rate_per_unit: "",
+    currency: "COP",
+    status: "active",
+    contact_email: "",
+    notes: "",
+  });
 
   const chooseFile = (file: File | undefined) => {
-    setError('')
-    setAnalysis(null)
+    setError("");
+    setAnalysis(null);
 
-    if (!file) return
+    if (!file) return;
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setSelectedFile(null)
-      setError('Please select a CSV file.')
-      return
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      setSelectedFile(null);
+      setError("Please select a CSV file.");
+      return;
     }
 
-    setSelectedFile(file)
-  }
+    setSelectedFile(file);
+  };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    chooseFile(event.target.files?.[0])
-  }
+    chooseFile(event.target.files?.[0]);
+  };
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    chooseFile(event.dataTransfer.files?.[0])
-  }
+    event.preventDefault();
+    chooseFile(event.dataTransfer.files?.[0]);
+  };
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      setError('Select a CSV file before starting the analysis.')
-      return
+      setError("Select a CSV file before starting the analysis.");
+      return;
     }
 
-    const formData = new FormData()
-    formData.append('file', selectedFile)
+    const formData = new FormData();
+    formData.append("file", selectedFile);
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError("");
 
     try {
-      const response = await fetch('/api/incidents/analyze', {
-        method: 'POST',
+      const response = await fetch("/api/incidents/analyze", {
+        method: "POST",
         body: formData,
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'The file could not be analyzed.')
+        throw new Error(data.detail || "The file could not be analyzed.");
       }
 
-      setAnalysis(data)
+      setAnalysis(data);
     } catch (err) {
-      setAnalysis(null)
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.')
+      setAnalysis(null);
+      setError(
+        err instanceof Error ? err.message : "An unexpected error occurred.",
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDownload = async () => {
     try {
-      const response = await fetch('/api/incidents/results/export')
+      const response = await fetch("/api/incidents/results/export");
 
       if (!response.ok) {
-        throw new Error('The results could not be downloaded.')
+        throw new Error("The results could not be downloaded.");
       }
 
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
 
-      link.href = url
-      link.download = 'incident-analysis-results.csv'
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
+      link.href = url;
+      link.download = "incident-analysis-results.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
 
-      window.URL.revokeObjectURL(url)
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message)
+        setError(err.message);
       }
     }
-  }
+  };
 
   const percentage = (value: number) => {
-    if (!analysis || analysis.valid_records === 0) return 0
-    return (value / analysis.valid_records) * 100
-  }
+    if (!analysis || analysis.valid_records === 0) return 0;
+    return (value / analysis.valid_records) * 100;
+  };
 
   const loadSuppliers = async () => {
-    setSupplierLoading(true)
-    setSupplierError('')
+    setSupplierLoading(true);
+    setSupplierError("");
 
-    const params = new URLSearchParams()
+    const params = new URLSearchParams();
 
-    if (countryFilter) params.set('country', countryFilter)
-    if (categoryFilter) params.set('category', categoryFilter)
+    if (countryFilter) params.set("country", countryFilter);
+    if (categoryFilter) params.set("category", categoryFilter);
 
-    const url = params.toString() ? `/suppliers?${params}` : '/suppliers'
+    const url = params.toString() ? `/suppliers?${params}` : "/suppliers";
 
     try {
-      const response = await fetch(url)
-      const data = await response.json()
+      const response = await authFetch(url);
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'No se pudo cargar el directorio.')
+        throw new Error(data.detail || "No se pudo cargar el directorio.");
       }
 
-      setSuppliers(data)
+      setSuppliers(data);
     } catch (err) {
       setSupplierError(
-        err instanceof Error ? err.message : 'Error inesperado al cargar proveedores.',
-      )
+        err instanceof Error
+          ? err.message
+          : "Error inesperado al cargar proveedores.",
+      );
     } finally {
-      setSupplierLoading(false)
+      setSupplierLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (section === 'suppliers') {
-      loadSuppliers()
+    if (section === "suppliers") {
+      loadSuppliers();
     }
-  }, [section, countryFilter, categoryFilter])
+  }, [section, countryFilter, categoryFilter]);
 
-  const handleCountryChange = (value: 'Colombia' | 'USA') => {
+  const handleCountryChange = (value: "Colombia" | "USA") => {
     setSupplierForm((current) => ({
       ...current,
       country: value,
-      currency: value === 'Colombia' ? 'COP' : 'USD',
-    }))
-  }
+      currency: value === "Colombia" ? "COP" : "USD",
+    }));
+  };
 
   const handleCreateSupplier = async (event: FormEvent) => {
-    event.preventDefault()
-    setSupplierError('')
+    event.preventDefault();
+    setSupplierError("");
 
     const categories = supplierForm.categories
-      .split(',')
+      .split(",")
       .map((category) => category.trim())
-      .filter(Boolean)
+      .filter(Boolean);
 
     try {
-      const response = await fetch('/suppliers', {
-        method: 'POST',
+      const response = await authFetch("/suppliers", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: supplierForm.name,
@@ -239,105 +250,107 @@ function App() {
           contact_email: supplierForm.contact_email || null,
           notes: supplierForm.notes || null,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          typeof data.detail === 'string'
+          typeof data.detail === "string"
             ? data.detail
-            : 'La API rechazó los datos del proveedor.',
-        )
+            : "La API rechazó los datos del proveedor.",
+        );
       }
 
-      setShowSupplierForm(false)
+      setShowSupplierForm(false);
       setSupplierForm({
-        name: '',
-        country: 'Colombia',
-        categories: 'carne',
-        rate_per_unit: '',
-        currency: 'COP',
-        status: 'active',
-        contact_email: '',
-        notes: '',
-      })
+        name: "",
+        country: "Colombia",
+        categories: "carne",
+        rate_per_unit: "",
+        currency: "COP",
+        status: "active",
+        contact_email: "",
+        notes: "",
+      });
 
-      await loadSuppliers()
+      await loadSuppliers();
     } catch (err) {
       setSupplierError(
-        err instanceof Error ? err.message : 'No se pudo registrar el proveedor.',
-      )
+        err instanceof Error
+          ? err.message
+          : "No se pudo registrar el proveedor.",
+      );
     }
-  }
+  };
 
   const handleRateUpdate = async (supplier: Supplier) => {
     const value = window.prompt(
       `Nueva tarifa para ${supplier.name}`,
       String(supplier.rate_per_unit),
-    )
+    );
 
-    if (value === null) return
+    if (value === null) return;
 
-    const newRate = Number(value)
+    const newRate = Number(value);
 
     if (!Number.isFinite(newRate) || newRate <= 0) {
-      setSupplierError('La tarifa debe ser un número mayor a cero.')
-      return
+      setSupplierError("La tarifa debe ser un número mayor a cero.");
+      return;
     }
 
     try {
-      const response = await fetch(`/suppliers/${supplier.id}/rate`, {
-        method: 'PATCH',
+      const response = await authFetch(`/suppliers/${supplier.id}/rate`, {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           rate_per_unit: newRate,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'No se pudo actualizar la tarifa.')
+        throw new Error(data.detail || "No se pudo actualizar la tarifa.");
       }
 
-      await loadSuppliers()
+      await loadSuppliers();
     } catch (err) {
       setSupplierError(
-        err instanceof Error ? err.message : 'Error al actualizar la tarifa.',
-      )
+        err instanceof Error ? err.message : "Error al actualizar la tarifa.",
+      );
     }
-  }
+  };
 
   const handleStatusToggle = async (supplier: Supplier) => {
-    const nextStatus = supplier.status === 'active' ? 'suspended' : 'active'
+    const nextStatus = supplier.status === "active" ? "suspended" : "active";
 
     try {
-      const response = await fetch(`/suppliers/${supplier.id}/status`, {
-        method: 'PATCH',
+      const response = await authFetch(`/suppliers/${supplier.id}/status`, {
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           status: nextStatus,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || 'No se pudo cambiar el estado.')
+        throw new Error(data.detail || "No se pudo cambiar el estado.");
       }
 
-      await loadSuppliers()
+      await loadSuppliers();
     } catch (err) {
       setSupplierError(
-        err instanceof Error ? err.message : 'Error al cambiar el estado.',
-      )
+        err instanceof Error ? err.message : "Error al cambiar el estado.",
+      );
     }
-  }
+  };
 
   return (
     <div className="app-shell">
@@ -355,17 +368,24 @@ function App() {
           <span className="nav-label">OPERATIONS</span>
 
           <button
-            className={`nav-item ${section === 'incidents' ? 'active' : ''}`}
-            onClick={() => setSection('incidents')}
+            className={`nav-item ${section === "incidents" ? "active" : ""}`}
+            onClick={() => setSection("incidents")}
           >
             Incident Analysis
           </button>
 
           <button
-            className={`nav-item ${section === 'suppliers' ? 'active' : ''}`}
-            onClick={() => setSection('suppliers')}
+            className={`nav-item ${section === "suppliers" ? "active" : ""}`}
+            onClick={() => setSection("suppliers")}
           >
             Supplier Directory
+          </button>
+
+          <button
+            className="nav-item"
+            onClick={() => navigate("/account/profile")}
+          >
+            Mi perfil
           </button>
         </nav>
 
@@ -376,7 +396,7 @@ function App() {
       </aside>
 
       <main className="main-content">
-        {section === 'incidents' ? (
+        {section === "incidents" ? (
           <>
             <header className="page-header">
               <div>
@@ -409,7 +429,8 @@ function App() {
                 <h2>Upload incident report</h2>
 
                 <p>
-                  Drag and drop your CSV file here or select it from your device.
+                  Drag and drop your CSV file here or select it from your
+                  device.
                 </p>
 
                 <label className="file-button">
@@ -434,7 +455,7 @@ function App() {
                 onClick={handleAnalyze}
                 disabled={!selectedFile || loading}
               >
-                {loading ? 'Analyzing...' : 'Analyze incidents'}
+                {loading ? "Analyzing..." : "Analyze incidents"}
               </button>
 
               {error && <div className="error-message">{error}</div>}
@@ -479,7 +500,7 @@ function App() {
                         ([category, count]) => (
                           <div className="bar-row" key={category}>
                             <div className="bar-info">
-                              <span>{category.replaceAll('_', ' ')}</span>
+                              <span>{category.replaceAll("_", " ")}</span>
                               <strong>
                                 {count} ({percentage(count).toFixed(1)}%)
                               </strong>
@@ -544,22 +565,30 @@ function App() {
                     <div className="issue-list">
                       <div>
                         <span>Missing location_id</span>
-                        <strong>{analysis.error_counts.missing_location}</strong>
+                        <strong>
+                          {analysis.error_counts.missing_location}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Invalid or missing category</span>
-                        <strong>{analysis.error_counts.invalid_category}</strong>
+                        <strong>
+                          {analysis.error_counts.invalid_category}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Empty description</span>
-                        <strong>{analysis.error_counts.empty_description}</strong>
+                        <strong>
+                          {analysis.error_counts.empty_description}
+                        </strong>
                       </div>
 
                       <div>
                         <span>Missing reporter_id</span>
-                        <strong>{analysis.error_counts.missing_reporter}</strong>
+                        <strong>
+                          {analysis.error_counts.missing_reporter}
+                        </strong>
                       </div>
 
                       <div>
@@ -571,7 +600,9 @@ function App() {
 
                       <div>
                         <span>Satisfaction score out of range</span>
-                        <strong>{analysis.error_counts.score_out_of_range}</strong>
+                        <strong>
+                          {analysis.error_counts.score_out_of_range}
+                        </strong>
                       </div>
                     </div>
                   </section>
@@ -590,7 +621,7 @@ function App() {
                     </div>
 
                     <p className="scored-summary">
-                      {analysis.scored_cases} scored cases of{' '}
+                      {analysis.scored_cases} scored cases of{" "}
                       {analysis.closed_cases} closed cases
                     </p>
 
@@ -605,7 +636,8 @@ function App() {
                               style={{
                                 width: `${
                                   analysis.scored_cases
-                                    ? ((analysis.score_counts[String(score)] || 0) /
+                                    ? ((analysis.score_counts[String(score)] ||
+                                        0) /
                                         analysis.scored_cases) *
                                       100
                                     : 0
@@ -642,7 +674,7 @@ function App() {
                 className="analyze-button supplier-create-button"
                 onClick={() => setShowSupplierForm((current) => !current)}
               >
-                {showSupplierForm ? 'Cerrar formulario' : 'Nuevo proveedor'}
+                {showSupplierForm ? "Cerrar formulario" : "Nuevo proveedor"}
               </button>
             </header>
 
@@ -668,7 +700,7 @@ function App() {
                   <option value="">Todas</option>
                   {VALID_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
-                      {category.replaceAll('_', ' ')}
+                      {category.replaceAll("_", " ")}
                     </option>
                   ))}
                 </select>
@@ -697,7 +729,7 @@ function App() {
                     value={supplierForm.country}
                     onChange={(event) =>
                       handleCountryChange(
-                        event.target.value as 'Colombia' | 'USA',
+                        event.target.value as "Colombia" | "USA",
                       )
                     }
                   >
@@ -719,7 +751,7 @@ function App() {
                   >
                     {VALID_CATEGORIES.map((category) => (
                       <option key={category} value={category}>
-                        {category.replaceAll('_', ' ')}
+                        {category.replaceAll("_", " ")}
                       </option>
                     ))}
                   </select>
@@ -754,7 +786,7 @@ function App() {
                     onChange={(event) =>
                       setSupplierForm((current) => ({
                         ...current,
-                        status: event.target.value as 'active' | 'suspended',
+                        status: event.target.value as "active" | "suspended",
                       }))
                     }
                   >
@@ -844,7 +876,7 @@ function App() {
                             <div className="category-badges">
                               {supplier.categories.map((category) => (
                                 <span key={category}>
-                                  {category.replaceAll('_', ' ')}
+                                  {category.replaceAll("_", " ")}
                                 </span>
                               ))}
                             </div>
@@ -852,7 +884,7 @@ function App() {
 
                           <td>
                             <strong>
-                              {supplier.currency}{' '}
+                              {supplier.currency}{" "}
                               {supplier.rate_per_unit.toLocaleString()}
                             </strong>
                           </td>
@@ -878,9 +910,9 @@ function App() {
                                 type="button"
                                 onClick={() => handleStatusToggle(supplier)}
                               >
-                                {supplier.status === 'active'
-                                  ? 'Suspender'
-                                  : 'Activar'}
+                                {supplier.status === "active"
+                                  ? "Suspender"
+                                  : "Activar"}
                               </button>
                             </div>
                           </td>
@@ -895,7 +927,45 @@ function App() {
         )}
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/register" element={<Register />} />
+
+      <Route
+        path="/account/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Backoffice />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+export default App;
