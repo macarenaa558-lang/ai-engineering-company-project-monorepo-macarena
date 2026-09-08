@@ -1,14 +1,23 @@
 import csv
 import io
+import sys
+from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from analysis import analyze_records
 from auth import router as auth_router
 from profiles import router as profiles_router
 from routes.suppliers import router as suppliers_router
+from routes.incidents import router as incidents_router
 from users import router as users_router
 
 
@@ -17,10 +26,96 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
+    path = request.url.path
+
+    is_incident_manager = (
+        path == "/api/incidents"
+        or (
+            path.startswith("/api/incidents/")
+            and path not in {
+                "/api/incidents/analyze",
+                "/api/incidents/results/export",
+            }
+        )
+    )
+
+    if not is_incident_manager:
+        return await request_validation_exception_handler(
+            request,
+            exc,
+        )
+
+    error = exc.errors()[0]
+    location = error.get("loc", [])
+    field = str(location[-1]) if location else "request"
+
+    return JSONResponse(
+        status_code=400,
+        content={
+            "error": "validation_error",
+            "field": field,
+            "message": error.get("msg", "Datos no válidos"),
+        },
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(
+    request: Request,
+    exc: HTTPException,
+):
+    path = request.url.path
+
+    is_incident_manager = (
+        path == "/api/incidents"
+        or (
+            path.startswith("/api/incidents/")
+            and path not in {
+                "/api/incidents/analyze",
+                "/api/incidents/results/export",
+            }
+        )
+    )
+
+    if is_incident_manager and isinstance(exc.detail, dict):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=exc.detail,
+            headers=exc.headers,
+        )
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(Exception)
+async def unexpected_exception_handler(
+    request: Request,
+    exc: Exception,
+):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "internal_server_error",
+            "message": "Ocurrió un error interno en el servidor",
+        },
+    )
+
+
 app.include_router(users_router)
 app.include_router(profiles_router)
 app.include_router(auth_router)
 app.include_router(suppliers_router)
+app.include_router(incidents_router)
 
 
 latest_analysis: dict[str, Any] | None = None

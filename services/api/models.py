@@ -4,6 +4,17 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from packages.shared.incidents import (
+    VALID_BRANCHES as INCIDENT_BRANCHES,
+    VALID_CATEGORIES as INCIDENT_CATEGORIES,
+    VALID_ORIGINS as INCIDENT_ORIGINS,
+    VALID_STATUSES as INCIDENT_STATUSES,
+    validate_branch,
+    validate_category,
+    validate_origin,
+    validate_status,
+)
+
 
 VALID_CATEGORIES = [
     "carne",
@@ -83,3 +94,69 @@ class SupplierRateUpdate(BaseModel):
 
 class SupplierStatusUpdate(BaseModel):
     status: SupplierStatus
+
+
+IncidentStatus = Enum(
+    "IncidentStatus",
+    {value: value for value in INCIDENT_STATUSES},
+    type=str,
+)
+
+IncidentOrigin = Enum(
+    "IncidentOrigin",
+    {value: value for value in INCIDENT_ORIGINS},
+    type=str,
+)
+
+IncidentCategory = Enum(
+    "IncidentCategory",
+    {value: value for value in INCIDENT_CATEGORIES},
+    type=str,
+)
+
+IncidentBranch = Enum(
+    "IncidentBranch",
+    {value: value for value in INCIDENT_BRANCHES},
+    type=str,
+)
+
+
+class IncidentCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=120)
+    description: str = Field(min_length=1)
+    category: IncidentCategory
+    status: IncidentStatus = IncidentStatus.open
+    origin: IncidentOrigin
+    branch: IncidentBranch
+
+    @field_validator("title", "description")
+    @classmethod
+    def validate_not_blank(cls, value):
+        if not value.strip():
+            raise ValueError("Este campo no puede estar vacío")
+
+        return value.strip()
+
+    @model_validator(mode="after")
+    def validate_incident_values(self):
+        validate_status(self.status.value)
+        validate_category(self.category.value)
+        validate_origin(self.origin.value)
+        validate_branch(self.branch.value)
+
+        return self
+
+
+class IncidentResponse(IncidentCreate):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class IncidentStatusUpdate(BaseModel):
+    status: IncidentStatus
+
+    @model_validator(mode="after")
+    def validate_incident_status(self):
+        validate_status(self.status.value)
+        return self
