@@ -9,6 +9,22 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/auth': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/profiles': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/suppliers': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 })
