@@ -25,45 +25,77 @@ def seed_incidents():
     skipped_duplicates = 0
     skipped_invalid = 0
 
-    with CSV_PATH.open(newline="", encoding="utf-8") as file:
-        reader = csv.DictReader(file)
+    try:
+        file = CSV_PATH.open(
+            newline="",
+            encoding="utf-8",
+        )
+    except (OSError, UnicodeError) as error:
+        print(
+            f"No se pudo abrir el archivo CSV: {error}",
+            file=sys.stderr,
+        )
+        return False
 
-        for row_number, row in enumerate(reader, start=2):
-            validation_errors = validate_record(row)
+    try:
+        with file:
+            reader = csv.DictReader(file)
 
-            if validation_errors:
-                skipped_invalid += 1
-                print(
-                    f"Fila {row_number} omitida: "
-                    f"{', '.join(validation_errors)}"
+            for row_number, row in enumerate(
+                reader,
+                start=2,
+            ):
+                validation_errors = validate_record(row)
+
+                if validation_errors:
+                    skipped_invalid += 1
+                    print(
+                        f"Fila {row_number} omitida: "
+                        f"{', '.join(validation_errors)}"
+                    )
+                    continue
+
+                try:
+                    source_id, incident = transform_csv_row(
+                        row
+                    )
+                except ValueError as error:
+                    skipped_invalid += 1
+                    print(
+                        f"Fila {row_number} omitida: {error}"
+                    )
+                    continue
+
+                already_imported = seed_tracking_table.get(
+                    lambda item: (
+                        item.get("source_id")
+                        == source_id
+                    )
                 )
-                continue
 
-            try:
-                source_id, incident = transform_csv_row(row)
-            except ValueError as error:
-                skipped_invalid += 1
-                print(f"Fila {row_number} omitida: {error}")
-                continue
+                if already_imported:
+                    skipped_duplicates += 1
+                    continue
 
-            already_imported = seed_tracking_table.get(
-                lambda item: item.get("source_id") == source_id
-            )
+                document_id = incidents_table.insert(
+                    incident
+                )
 
-            if already_imported:
-                skipped_duplicates += 1
-                continue
+                seed_tracking_table.insert(
+                    {
+                        "source_id": source_id,
+                        "incident_doc_id": document_id,
+                    }
+                )
 
-            document_id = incidents_table.insert(incident)
+                inserted += 1
 
-            seed_tracking_table.insert(
-                {
-                    "source_id": source_id,
-                    "incident_doc_id": document_id,
-                }
-            )
-
-            inserted += 1
+    except csv.Error as error:
+        print(
+            f"Error al leer el archivo CSV: {error}",
+            file=sys.stderr,
+        )
+        return False
 
     print()
     print("Seed finalizado")
@@ -72,6 +104,18 @@ def seed_incidents():
     print("Inválidas omitidas:", skipped_invalid)
     print("Total incidencias:", len(incidents_table))
 
+    return True
+
 
 if __name__ == "__main__":
-    seed_incidents()
+    try:
+        success = seed_incidents()
+    except Exception:
+        print(
+            "Ocurrió un error inesperado al ejecutar el seed.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not success:
+        sys.exit(1)

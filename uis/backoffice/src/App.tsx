@@ -55,6 +55,8 @@ function Backoffice() {
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierLoading, setSupplierLoading] = useState(false);
+  const [supplierActionLoading, setSupplierActionLoading] = useState(false);
+  const [supplierActionId, setSupplierActionId] = useState<number | null>(null);
   const [supplierError, setSupplierError] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -120,6 +122,7 @@ function Backoffice() {
   const handleCreateSupplier = async (event: FormEvent) => {
     event.preventDefault();
     setSupplierError("");
+    setSupplierActionLoading(true);
 
     const categories = supplierForm.categories
       .split(",")
@@ -173,6 +176,8 @@ function Backoffice() {
           ? err.message
           : "No se pudo registrar el proveedor.",
       );
+    } finally {
+      setSupplierActionLoading(false);
     }
   };
 
@@ -190,6 +195,9 @@ function Backoffice() {
       setSupplierError("La tarifa debe ser un número mayor a cero.");
       return;
     }
+
+    setSupplierError("");
+    setSupplierActionId(supplier.id);
 
     try {
       const response = await authFetch(`/suppliers/${supplier.id}/rate`, {
@@ -213,11 +221,16 @@ function Backoffice() {
       setSupplierError(
         err instanceof Error ? err.message : "Error al actualizar la tarifa.",
       );
+    } finally {
+      setSupplierActionId(null);
     }
   };
 
   const handleStatusToggle = async (supplier: Supplier) => {
     const nextStatus = supplier.status === "active" ? "suspended" : "active";
+
+    setSupplierError("");
+    setSupplierActionId(supplier.id);
 
     try {
       const response = await authFetch(`/suppliers/${supplier.id}/status`, {
@@ -241,6 +254,8 @@ function Backoffice() {
       setSupplierError(
         err instanceof Error ? err.message : "Error al cambiar el estado.",
       );
+    } finally {
+      setSupplierActionId(null);
     }
   };
 
@@ -455,8 +470,14 @@ function Backoffice() {
                   />
                 </div>
 
-                <button type="submit" className="analyze-button">
-                  Registrar proveedor
+                <button
+                  type="submit"
+                  className="analyze-button"
+                  disabled={supplierActionLoading}
+                >
+                  {supplierActionLoading
+                    ? "Registrando..."
+                    : "Registrar proveedor"}
                 </button>
               </form>
             )}
@@ -464,6 +485,13 @@ function Backoffice() {
             {supplierError && (
               <div className="error-message supplier-error">
                 {supplierError}
+                <button
+                  type="button"
+                  onClick={loadSuppliers}
+                  disabled={supplierLoading}
+                >
+                  {supplierLoading ? "Reintentando..." : "Reintentar"}
+                </button>
               </div>
             )}
 
@@ -535,15 +563,21 @@ function Backoffice() {
                               <button
                                 type="button"
                                 onClick={() => handleRateUpdate(supplier)}
+                                disabled={supplierActionId === supplier.id}
                               >
-                                Tarifa
+                                {supplierActionId === supplier.id
+                                  ? "Procesando..."
+                                  : "Tarifa"}
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => handleStatusToggle(supplier)}
+                                disabled={supplierActionId === supplier.id}
                               >
-                                {supplier.status === "active"
+                                {supplierActionId === supplier.id
+                                  ? "Procesando..."
+                                  : supplier.status === "active"
                                   ? "Suspender"
                                   : "Activar"}
                               </button>

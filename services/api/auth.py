@@ -209,61 +209,74 @@ def forgot_password(
             f"?token={raw_token}"
         )
 
-        resend.Emails.send(
-            {
-                "from": RESET_FROM_EMAIL,
-                "to": user["email"],
-                "subject": "Restablece tu contraseña",
-                "html": f"""
-                <div
-                    style="
-                        font-family: Arial, sans-serif;
-                        max-width: 600px;
-                        margin: auto;
-                        padding: 20px;
-                    "
-                >
-                    <h2>Restablecimiento de contraseña</h2>
+        try:
+            resend.Emails.send(
+                {
+                    "from": RESET_FROM_EMAIL,
+                    "to": user["email"],
+                    "subject": "Restablece tu contraseña",
+                    "html": f"""
+                    <div
+                        style="
+                            font-family: Arial, sans-serif;
+                            max-width: 600px;
+                            margin: auto;
+                            padding: 20px;
+                        "
+                    >
+                        <h2>Restablecimiento de contraseña</h2>
 
-                    <p>
-                        Recibimos una solicitud para restablecer
-                        tu contraseña.
-                    </p>
+                        <p>
+                            Recibimos una solicitud para restablecer
+                            tu contraseña.
+                        </p>
 
-                    <p>
-                        Haz clic en el siguiente botón para crear
-                        una nueva contraseña:
-                    </p>
+                        <p>
+                            Haz clic en el siguiente botón para crear
+                            una nueva contraseña:
+                        </p>
 
-                    <p style="margin: 30px 0;">
-                        <a
-                            href="{reset_link}"
-                            style="
-                                display: inline-block;
-                                padding: 12px 20px;
-                                background-color: #111827;
-                                color: white;
-                                text-decoration: none;
-                                border-radius: 6px;
-                            "
-                        >
-                            Restablecer contraseña
-                        </a>
-                    </p>
+                        <p style="margin: 30px 0;">
+                            <a
+                                href="{reset_link}"
+                                style="
+                                    display: inline-block;
+                                    padding: 12px 20px;
+                                    background-color: #111827;
+                                    color: white;
+                                    text-decoration: none;
+                                    border-radius: 6px;
+                                "
+                            >
+                                Restablecer contraseña
+                            </a>
+                        </p>
 
-                    <p>
-                        Este enlace vencerá en
-                        {RESET_TOKEN_EXPIRE_MINUTES} minutos.
-                    </p>
+                        <p>
+                            Este enlace vencerá en
+                            {RESET_TOKEN_EXPIRE_MINUTES} minutos.
+                        </p>
 
-                    <p>
-                        Si no solicitaste este cambio,
-                        puedes ignorar este correo.
-                    </p>
-                </div>
-                """,
-            }
-        )
+                        <p>
+                            Si no solicitaste este cambio,
+                            puedes ignorar este correo.
+                        </p>
+                    </div>
+                    """,
+                }
+            )
+        except Exception:
+            invalidate_password_reset_tokens_for_user(
+                user["id"]
+            )
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "El servicio de correo no está disponible "
+                    "temporalmente. Intenta nuevamente más tarde."
+                ),
+            )
+
 
     return {
         "message": (

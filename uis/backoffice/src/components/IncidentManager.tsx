@@ -355,6 +355,12 @@ export default function IncidentManager() {
   const [statusUpdateError, setStatusUpdateError] =
     useState("");
 
+  const [statusUpdateSuccess, setStatusUpdateSuccess] =
+    useState("");
+
+  const [statusUpdateLoadingId, setStatusUpdateLoadingId] =
+    useState<number | null>(null);
+
 
   const validateForm = () => {
     const errors: FormErrors = {};
@@ -580,6 +586,8 @@ export default function IncidentManager() {
         incident.status;
 
       setStatusUpdateError("");
+      setStatusUpdateSuccess("");
+      setStatusUpdateLoadingId(incident.id);
 
       setIncidents((current) =>
         current.map((item) =>
@@ -619,6 +627,10 @@ export default function IncidentManager() {
         if (statusFilter) {
           await loadIncidents();
         }
+
+        setStatusUpdateSuccess(
+          "Estado actualizado correctamente.",
+        );
       } catch (error) {
         setIncidents((current) =>
           current.map((item) =>
@@ -636,6 +648,8 @@ export default function IncidentManager() {
             ? error.message
             : "No se pudo actualizar el estado.",
         );
+      } finally {
+        setStatusUpdateLoadingId(null);
       }
     };
 
@@ -1136,6 +1150,12 @@ export default function IncidentManager() {
           </div>
         )}
 
+        {statusUpdateSuccess && (
+          <div className="success-message">
+            {statusUpdateSuccess}
+          </div>
+        )}
+
 
         {listLoading ? (
           <div className="supplier-loading">
@@ -1243,8 +1263,12 @@ export default function IncidentManager() {
 
 
                         <td>
-                          {nextStatuses.length >
-                          0 ? (
+                          {statusUpdateLoadingId === incident.id ? (
+                            <span>
+                              Procesando...
+                            </span>
+                          ) : nextStatuses.length >
+                            0 ? (
                             <select
                               value={
                                 incident.status
