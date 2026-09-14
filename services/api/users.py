@@ -133,7 +133,11 @@ def get_user(
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="Usuario no encontrado"
+            detail={
+                "error": "not_found",
+                "field": "user_id",
+                "message": "Usuario no encontrado",
+            },
         )
 
     return public_user(user)
@@ -148,6 +152,16 @@ def edit_user(
         user_id,
         current_user
     )
+
+    if not get_user_by_id(user_id):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "not_found",
+                "field": "user_id",
+                "message": "Usuario no encontrado",
+            },
+        )
 
     changes = data.model_dump(
         exclude_none=True
@@ -202,7 +216,11 @@ def remove_user(
     if not get_user_by_id(user_id):
         raise HTTPException(
             status_code=404,
-            detail="Usuario no encontrado"
+            detail={
+                "error": "not_found",
+                "field": "user_id",
+                "message": "Usuario no encontrado",
+            },
         )
 
     delete_user(user_id)

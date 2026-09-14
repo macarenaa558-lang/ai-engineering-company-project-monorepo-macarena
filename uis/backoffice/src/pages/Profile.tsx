@@ -29,33 +29,37 @@ function Profile() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await authFetch('/auth/me')
+  const loadProfile = async () => {
+    setLoading(true)
+    setError('')
 
-        if (!response.ok) {
-          const data = await response.json()
-          throw new Error(data.detail || 'No se pudo cargar el perfil.')
-        }
+    try {
+      const response = await authFetch('/auth/me')
 
-        const data: CurrentUser = await response.json()
-
-        setUser(data)
-        setName(data.profile?.name || '')
-        setPhone(data.profile?.phone || '')
-        setAddress(data.profile?.address || '')
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Ocurrió un error al cargar el perfil.',
-        )
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.detail || 'No se pudo cargar el perfil.')
       }
-    }
 
+      const data: CurrentUser = await response.json()
+
+      setUser(data)
+      setName(data.profile?.name || '')
+      setPhone(data.profile?.phone || '')
+      setAddress(data.profile?.address || '')
+    } catch (err) {
+      setUser(null)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Ocurrió un error al cargar el perfil.',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     loadProfile()
   }, [])
 
@@ -106,6 +110,24 @@ function Profile() {
     return (
       <div className="profile-page">
         <div className="profile-card">Cargando perfil...</div>
+      </div>
+    )
+  }
+
+  if (!user && error) {
+    return (
+      <div className="profile-page">
+        <div className="profile-card">
+          <div className="error-message">{error}</div>
+
+          <button
+            type="button"
+            className="auth-submit"
+            onClick={loadProfile}
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     )
   }

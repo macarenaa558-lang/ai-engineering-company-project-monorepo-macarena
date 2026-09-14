@@ -33,7 +33,11 @@ def get_my_profile(
     if not profile:
         raise HTTPException(
             status_code=404,
-            detail="Perfil no encontrado"
+            detail={
+                "error": "not_found",
+                "field": "profile",
+                "message": "Perfil no encontrado",
+            },
         )
 
     return profile
@@ -44,6 +48,16 @@ def edit_my_profile(
     data: ProfileUpdate,
     current_user: dict = Depends(get_current_user)
 ):
+    if not get_profile_by_user_id(current_user["id"]):
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "not_found",
+                "field": "profile",
+                "message": "Perfil no encontrado",
+            },
+        )
+
     changes = data.model_dump(
         exclude_none=True
     )

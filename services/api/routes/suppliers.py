@@ -88,7 +88,11 @@ def get_supplier(
     if not supplier:
         raise HTTPException(
             status_code=404,
-            detail="Proveedor no encontrado",
+            detail={
+                "error": "not_found",
+                "field": "supplier_id",
+                "message": "Proveedor no encontrado",
+            },
         )
 
     return supplier_with_id(supplier)
@@ -107,7 +111,11 @@ def update_supplier_rate(
     if not supplier:
         raise HTTPException(
             status_code=404,
-            detail="Proveedor no encontrado",
+            detail={
+                "error": "not_found",
+                "field": "supplier_id",
+                "message": "Proveedor no encontrado",
+            },
         )
 
     suppliers_table.update(
@@ -140,7 +148,11 @@ def update_supplier_status(
     if not supplier:
         raise HTTPException(
             status_code=404,
-            detail="Proveedor no encontrado",
+            detail={
+                "error": "not_found",
+                "field": "supplier_id",
+                "message": "Proveedor no encontrado",
+            },
         )
 
     suppliers_table.update(
@@ -169,7 +181,11 @@ def delete_supplier(
     if not supplier:
         raise HTTPException(
             status_code=404,
-            detail="Proveedor no encontrado",
+            detail={
+                "error": "not_found",
+                "field": "supplier_id",
+                "message": "Proveedor no encontrado",
+            },
         )
 
     suppliers_table.remove(
