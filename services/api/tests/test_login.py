@@ -97,3 +97,25 @@ def test_login_wrong_password(monkeypatch):
         exc.value.detail
         == "Email o contraseña incorrectos"
     )
+
+
+def test_login_empty_email(monkeypatch):
+    """Un email vacío se maneja como un caso límite de credenciales inválidas."""
+    monkeypatch.setattr(
+        auth,
+        "get_user_by_email",
+        lambda email: None,
+    )
+
+    form = make_login_form(
+        email="",
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        auth.login(form)
+
+    assert exc.value.status_code == 401
+    assert (
+        exc.value.detail
+        == "Email o contraseña incorrectos"
+    )

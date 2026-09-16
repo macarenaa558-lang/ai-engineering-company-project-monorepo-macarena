@@ -77,7 +77,7 @@ Estos casos se incluirán en la suite de pruebas.
 
 ## Resultados
 
-La suite de autenticación se ejecutó correctamente: 16 pruebas aprobadas y 0 fallidas. La cobertura obtenida para el módulo auth.py fue del 94%, superando el mínimo requerido del 70%.
+La suite de autenticación se ejecutó correctamente: 17 pruebas aprobadas y 0 fallidas. La cobertura obtenida para el módulo auth.py fue del 94%, superando el mínimo requerido del 70%.
 
 ## Pruebas de autenticación en TypeScript
 
