@@ -12,12 +12,16 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
+from sqlmodel import SQLModel
 
 from analysis import analyze_records
+import models
+from database import engine
 from auth import router as auth_router
 from profiles import router as profiles_router
 from routes.suppliers import router as suppliers_router
 from routes.incidents import router as incidents_router
+from routes.inventory import router as inventory_router
 from users import router as users_router
 
 
@@ -25,7 +29,7 @@ app = FastAPI(
     title="Brasaland Incident Analysis API",
     version="1.0.0"
 )
-
+SQLModel.metadata.create_all(engine)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
@@ -116,6 +120,7 @@ app.include_router(profiles_router)
 app.include_router(auth_router)
 app.include_router(suppliers_router)
 app.include_router(incidents_router)
+app.include_router(inventory_router)
 
 
 latest_analysis: dict[str, Any] | None = None

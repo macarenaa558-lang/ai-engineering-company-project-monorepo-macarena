@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+from sqlmodel import Field as SQLField, Relationship, SQLModel
 
 from packages.shared.incidents import (
     VALID_BRANCHES as INCIDENT_BRANCHES,
@@ -133,7 +134,9 @@ class IncidentCreate(BaseModel):
     @classmethod
     def validate_not_blank(cls, value):
         if not value.strip():
-            raise ValueError("Este campo no puede estar vacío")
+            raise ValueError(
+                "Este campo no puede estar vacío"
+            )
 
         return value.strip()
 
@@ -160,3 +163,71 @@ class IncidentStatusUpdate(BaseModel):
     def validate_incident_status(self):
         validate_status(self.status.value)
         return self
+
+
+class Ingredient(SQLModel, table=True):
+    id: Optional[int] = SQLField(
+        default=None,
+        primary_key=True,
+    )
+    name: str
+    sku: str = SQLField(
+        index=True,
+        unique=True,
+    )
+    unit: str
+    category: str
+    country: str
+
+    entries: list["IngredientEntry"] = Relationship(
+        back_populates="product"
+    )
+    exits: list["IngredientExit"] = Relationship(
+        back_populates="product"
+    )
+
+
+class IngredientEntry(SQLModel, table=True):
+    id: Optional[int] = SQLField(
+        default=None,
+        primary_key=True,
+    )
+    ingredient_id: int = SQLField(
+        foreign_key="ingredient.id"
+    )
+    quantity: float
+    supplier_name: str
+    location_id: int
+    created_at: datetime = SQLField(
+        default_factory=lambda: datetime.now(
+            timezone.utc
+        )
+    )
+    user_uuid: str
+
+    product: Optional[Ingredient] = Relationship(
+        back_populates="entries"
+    )
+
+
+class IngredientExit(SQLModel, table=True):
+    id: Optional[int] = SQLField(
+        default=None,
+        primary_key=True,
+    )
+    ingredient_id: int = SQLField(
+        foreign_key="ingredient.id"
+    )
+    quantity: float
+    reason: str
+    location_id: int
+    created_at: datetime = SQLField(
+        default_factory=lambda: datetime.now(
+            timezone.utc
+        )
+    )
+    user_uuid: str
+
+    product: Optional[Ingredient] = Relationship(
+        back_populates="exits"
+    )
