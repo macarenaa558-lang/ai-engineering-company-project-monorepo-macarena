@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listOrders } from "../../services/inventory";
 import type { IngredientMovement } from "../../types/inventory";
+import BackofficeLink from "../../components/inventory/BackofficeLink";
 
 export default function InventoryOrders() {
   const [orders, setOrders] = useState<IngredientMovement[]>([]);
@@ -52,6 +53,7 @@ export default function InventoryOrders() {
 
   return (
     <div className="inventory-page">
+        <BackofficeLink />
       <div className="inventory-header">
         <div>
           <span className="eyebrow">INVENTARIO</span>

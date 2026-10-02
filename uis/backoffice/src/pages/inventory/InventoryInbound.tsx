@@ -6,6 +6,7 @@ import {
   listProducts,
 } from "../../services/inventory";
 import type { Ingredient } from "../../types/inventory";
+import BackofficeLink from "../../components/inventory/BackofficeLink";
 
 export default function InventoryInbound() {
   const [searchParams] = useSearchParams();
@@ -117,6 +118,7 @@ export default function InventoryInbound() {
 
   return (
     <div className="inventory-page">
+      <BackofficeLink />
       <div className="inventory-header">
         <div>
           <span className="eyebrow">INVENTARIO</span>

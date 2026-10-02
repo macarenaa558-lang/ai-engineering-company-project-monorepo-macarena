@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { listProducts } from "../../services/inventory";
 import type { Ingredient } from "../../types/inventory";
+import BackofficeLink from "../../components/inventory/BackofficeLink";
 
 // Umbrales visuales del backoffice.
 // <= 5: stock bajo | <= 15: atención | > 15: saludable.
@@ -69,6 +70,8 @@ export default function InventoryProducts() {
 
   return (
     <div className="inventory-page">
+        <BackofficeLink />
+        
       <div className="inventory-header">
         <div>
           <span className="eyebrow">INVENTARIO</span>
