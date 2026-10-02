@@ -898,3 +898,237 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================
+   INVENTARIO - BRASALAND
+   ========================= */
+
+.inventory-page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.inventory-header h1 {
+  margin: 6px 0 8px;
+}
+
+.inventory-header p {
+  margin: 0;
+  color: #667085;
+}
+
+.inventory-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.inventory-nav a,
+.inventory-history-link {
+  display: inline-block;
+  padding: 10px 16px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  background: #ffffff;
+  font-weight: 600;
+}
+
+.inventory-nav a:hover,
+.inventory-history-link:hover {
+  background: #f2f4f7;
+}
+
+.inventory-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+.inventory-table th,
+.inventory-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eaecf0;
+  vertical-align: middle;
+}
+
+.inventory-table th {
+  background: #f9fafb;
+  font-size: 0.85rem;
+  color: #475467;
+}
+
+.inventory-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.inventory-stock,
+.inventory-movement {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.inventory-stock-low {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.inventory-stock-warning {
+  background: #fef0c7;
+  color: #b54708;
+}
+
+.inventory-stock-healthy {
+  background: #d1fadf;
+  color: #027a48;
+}
+
+.inventory-movement-inbound {
+  background: #d1fadf;
+  color: #027a48;
+}
+
+.inventory-movement-outbound {
+  background: #fee4e2;
+  color: #b42318;
+}
+
+.inventory-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.inventory-actions a {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.inventory-form {
+  max-width: 650px;
+  padding: 24px;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.inventory-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+
+.inventory-form-group label {
+  font-weight: 600;
+}
+
+.inventory-form-group input,
+.inventory-form-group select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #ffffff;
+  font: inherit;
+}
+
+.inventory-form-group input:focus,
+.inventory-form-group select:focus {
+  outline: 2px solid #84adff;
+  outline-offset: 1px;
+}
+
+.inventory-submit {
+  padding: 11px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.inventory-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.inventory-stock-info {
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: #f2f4f7;
+}
+
+.inventory-warning {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef0c7;
+  color: #93370d;
+  font-size: 0.9rem;
+}
+
+.inventory-loading,
+.inventory-empty {
+  padding: 24px;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.inventory-secondary {
+  margin-top: 4px;
+  color: #667085;
+  font-size: 0.8rem;
+}
+
+.inventory-user {
+  font-family: monospace;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.success-message {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #d1fadf;
+  color: #05603a;
+}
+
+@media (max-width: 700px) {
+  .inventory-page {
+    padding: 20px;
+  }
+
+  .inventory-header {
+    flex-direction: column;
+  }
+
+  .inventory-form {
+    padding: 18px;
+  }
+}

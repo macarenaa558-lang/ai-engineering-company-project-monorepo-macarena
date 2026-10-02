@@ -10,6 +10,10 @@ import ChangePassword from "./pages/ChangePassword";
 import { authFetch, isAuthenticated } from "./services/auth";
 import IncidentManager from "./components/IncidentManager";
 import "./App.css";
+import InventoryProducts from "./pages/inventory/InventoryProducts";
+import InventoryInbound from "./pages/inventory/InventoryInbound";
+import InventoryOutbound from "./pages/inventory/InventoryOutbound";
+import InventoryOrders from "./pages/inventory/InventoryOrders";
 
 
 type Supplier = {
@@ -633,6 +637,42 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      <Route
+  path="/backoffice/inventory/products"
+  element={
+    <ProtectedRoute>
+      <InventoryProducts />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/backoffice/inventory/orders/inbound"
+  element={
+    <ProtectedRoute>
+      <InventoryInbound />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/backoffice/inventory/orders/outbound"
+  element={
+    <ProtectedRoute>
+      <InventoryOutbound />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/backoffice/inventory/orders"
+  element={
+    <ProtectedRoute>
+      <InventoryOrders />
+    </ProtectedRoute>
+  }
+/>
 
       <Route
         path="/"
