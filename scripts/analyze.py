@@ -14,12 +14,26 @@ def load_csv(file_path):
     path = Path(file_path)
 
     if not path.exists():
-        print(f"Error: file not found -> {file_path}")
+        print(
+            f"Error: file not found -> {file_path}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    with path.open("r", encoding="utf-8", newline="") as file:
-        reader = csv.DictReader(file)
-        return list(reader)
+    try:
+        with path.open(
+            "r",
+            encoding="utf-8",
+            newline="",
+        ) as file:
+            reader = csv.DictReader(file)
+            return list(reader)
+    except (OSError, UnicodeError, csv.Error) as error:
+        print(
+            f"Error reading CSV file: {error}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def export_results(output_path, analysis):
@@ -120,14 +134,26 @@ def export_results(output_path, analysis):
             "percentage": ""
         })
 
-    with open(output_path, "w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=["metric", "value", "percentage"]
-        )
+    try:
+        with open(
+            output_path,
+            "w",
+            encoding="utf-8",
+            newline="",
+        ) as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=["metric", "value", "percentage"]
+            )
 
-        writer.writeheader()
-        writer.writerows(rows)
+            writer.writeheader()
+            writer.writerows(rows)
+    except (OSError, csv.Error) as error:
+        print(
+            f"Error exporting results: {error}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def print_analysis(file_path, analysis):
