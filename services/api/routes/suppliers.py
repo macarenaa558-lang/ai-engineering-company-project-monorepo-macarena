@@ -12,6 +12,7 @@ from models import (
     SupplierResponse,
     SupplierStatusUpdate,
 )
+from serialization_schemas import MessageResponse
 
 
 router = APIRouter(
@@ -169,7 +170,10 @@ def update_supplier_status(
     return supplier_with_id(updated_supplier)
 
 
-@router.delete("/{supplier_id}")
+@router.delete(
+    "/{supplier_id}",
+    response_model=MessageResponse,
+)
 def delete_supplier(
     supplier_id: int,
     current_user: dict = Depends(get_current_user),

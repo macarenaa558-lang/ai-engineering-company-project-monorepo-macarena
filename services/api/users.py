@@ -8,20 +8,24 @@ from passlib.hash import bcrypt
 from pydantic import BaseModel
 
 from auth import get_current_user
+from serialization_schemas import (
+    MessageResponse,
+    UserResponse,
+    UserWithProfileResponse,
+)
 from services import (
     create_user,
     delete_user,
     get_all_users,
-    get_profile_by_user_id,
     get_user_by_email,
     get_user_by_id,
-    update_user
+    update_user,
 )
 
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"]
+    tags=["users"],
 )
 
 
@@ -52,13 +56,13 @@ def public_user(user: dict):
         "email": user["email"],
         "is_active": user["is_active"],
         "role": user["role"],
-        "created_at": user["created_at"]
+        "created_at": user["created_at"],
     }
 
 
 def owner_or_admin(
     user_id: str,
-    current_user: dict
+    current_user: dict,
 ):
     if (
         current_user["id"] != user_id
@@ -66,17 +70,19 @@ def owner_or_admin(
     ):
         raise HTTPException(
             status_code=403,
-            detail="No tenés permiso"
+            detail="No tenés permiso",
         )
 
 
-@router.post("")
+@router.post(
+    "",
+    response_model=UserWithProfileResponse,
+)
 def register(data: UserCreate):
-
     if get_user_by_email(data.email):
         raise HTTPException(
             status_code=400,
-            detail="El email ya está registrado"
+            detail="El email ya está registrado",
         )
 
     user_id = str(uuid4())
@@ -87,7 +93,7 @@ def register(data: UserCreate):
         "hashed_password": bcrypt.hash(data.password),
         "is_active": True,
         "role": "user",
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
     profile = {
@@ -95,22 +101,26 @@ def register(data: UserCreate):
         "user_id": user_id,
         "name": data.name,
         "phone": data.phone,
-        "address": data.address
+        "address": data.address,
     }
 
     create_user(
         user,
-        profile
+        profile,
     )
 
     return {
         "user": public_user(user),
-        "profile": profile
+        "profile": profile,
     }
 
-@router.get("")
+
+@router.get(
+    "",
+    response_model=list[UserResponse],
+)
 def list_users(
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     return [
         public_user(user)
@@ -118,14 +128,17 @@ def list_users(
     ]
 
 
-@router.get("/{user_id}")
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+)
 def get_user(
     user_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     owner_or_admin(
         user_id,
-        current_user
+        current_user,
     )
 
     user = get_user_by_id(user_id)
@@ -142,15 +155,19 @@ def get_user(
 
     return public_user(user)
 
-@router.put("/{user_id}")
+
+@router.put(
+    "/{user_id}",
+    response_model=UserResponse,
+)
 def edit_user(
     user_id: str,
     data: UserUpdate,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     owner_or_admin(
         user_id,
-        current_user
+        current_user,
     )
 
     if not get_user_by_id(user_id):
@@ -178,7 +195,7 @@ def edit_user(
         ):
             raise HTTPException(
                 status_code=400,
-                detail="El email ya está registrado"
+                detail="El email ya está registrado",
             )
 
     if "password" in changes:
@@ -187,30 +204,33 @@ def edit_user(
         )
 
     if "role" in changes:
-
         if current_user["role"] != "admin":
             raise HTTPException(
                 status_code=403,
-                detail="Solo un admin puede cambiar roles"
+                detail="Solo un admin puede cambiar roles",
             )
 
         changes["role"] = changes["role"].value
 
     user = update_user(
         user_id,
-        changes
+        changes,
     )
 
     return public_user(user)
 
-@router.delete("/{user_id}")
+
+@router.delete(
+    "/{user_id}",
+    response_model=MessageResponse,
+)
 def remove_user(
     user_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     owner_or_admin(
         user_id,
-        current_user
+        current_user,
     )
 
     if not get_user_by_id(user_id):

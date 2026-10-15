@@ -15,6 +15,7 @@ from models import (
     IncidentStatus,
     IncidentStatusUpdate,
 )
+from serialization_schemas import IncidentSummaryResponse
 
 
 router = APIRouter(
@@ -94,7 +95,10 @@ def list_incidents(
     ]
 
 
-@router.get("/summary")
+@router.get(
+    "/summary",
+    response_model=IncidentSummaryResponse,
+)
 def incidents_summary(
     current_user: dict = Depends(get_current_user),
 ):

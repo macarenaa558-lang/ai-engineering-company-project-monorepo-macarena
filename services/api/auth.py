@@ -11,6 +11,11 @@ from jose import JWTError, jwt
 from passlib.hash import bcrypt
 from pydantic import BaseModel
 
+from serialization_schemas import (
+    AuthMeResponse,
+    MessageResponse,
+    TokenResponse,
+)
 from services import (
     create_password_reset_token,
     get_password_reset_token,
@@ -129,7 +134,7 @@ def get_current_user(
         )
 
 
-@router.post("/login")
+@router.post("/login", response_model=TokenResponse)
 def login(
     form: OAuth2PasswordRequestForm = Depends(),
 ):
@@ -160,7 +165,7 @@ def login(
     }
 
 
-@router.get("/me")
+@router.get("/me", response_model=AuthMeResponse)
 def get_me(
     current_user: dict = Depends(get_current_user),
 ):
@@ -174,7 +179,10 @@ def get_me(
     }
 
 
-@router.post("/forgot-password")
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+)
 def forgot_password(
     data: ForgotPasswordRequest,
 ):
@@ -277,7 +285,6 @@ def forgot_password(
                 ),
             )
 
-
     return {
         "message": (
             "Si esa dirección está registrada, "
@@ -286,7 +293,10 @@ def forgot_password(
     }
 
 
-@router.post("/reset-password")
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+)
 def reset_password(
     data: ResetPasswordRequest,
 ):
@@ -352,7 +362,10 @@ def reset_password(
     }
 
 
-@router.post("/change-password")
+@router.post(
+    "/change-password",
+    response_model=MessageResponse,
+)
 def change_password(
     data: ChangePasswordRequest,
     current_user: dict = Depends(

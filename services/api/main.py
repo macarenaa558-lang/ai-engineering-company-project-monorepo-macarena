@@ -23,6 +23,7 @@ from routes.suppliers import router as suppliers_router
 from routes.incidents import router as incidents_router
 from routes.inventory import router as inventory_router
 from users import router as users_router
+from serialization_schemas import IncidentAnalysisResponse
 
 
 app = FastAPI(
@@ -126,7 +127,10 @@ app.include_router(inventory_router)
 latest_analysis: dict[str, Any] | None = None
 
 
-@app.post("/api/incidents/analyze")
+@app.post(
+    "/api/incidents/analyze",
+    response_model=IncidentAnalysisResponse,
+)
 async def analyze_incidents(file: UploadFile = File(...)):
     global latest_analysis
 
@@ -206,7 +210,10 @@ async def analyze_incidents(file: UploadFile = File(...)):
     return latest_analysis
 
 
-@app.get("/api/incidents/results/export")
+@app.get(
+    "/api/incidents/results/export",
+    response_class=StreamingResponse,
+)
 def export_latest_results():
     if latest_analysis is None:
         raise HTTPException(
