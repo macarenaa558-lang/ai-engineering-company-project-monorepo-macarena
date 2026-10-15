@@ -2,18 +2,19 @@ import { useState } from 'react'
 import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
+import { OptimizedImage } from './components/OptimizedImage'
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
-    <>
+    <main>
       <section id="center">
         <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+          <OptimizedImage src={heroImg} className="base" width={170} height={179} alt="" loading="eager" fetchPriority="high" />
+          <OptimizedImage src={reactLogo} className="framework" width={28} height={28} alt="React" />
+          <OptimizedImage src={viteLogo} className="vite" width={26} height={26} alt="Vite" />
         </div>
         <div>
           <h1>Get started</h1>
@@ -42,13 +43,13 @@ function App() {
           <ul>
             <li>
               <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
+                <OptimizedImage className="logo" src={viteLogo} width={18} height={18} alt="" />
                 Explore Vite
               </a>
             </li>
             <li>
               <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
+                <OptimizedImage className="button-icon" src={reactLogo} width={18} height={18} alt="" />
                 Learn more
               </a>
             </li>
@@ -115,7 +116,7 @@ function App() {
 
       <div className="ticks"></div>
       <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
