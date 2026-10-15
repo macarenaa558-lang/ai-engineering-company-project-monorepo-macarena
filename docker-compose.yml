@@ -1,0 +1,44 @@
+services:
+  interfaces:
+    build:
+      context: ./uis
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      VITE_BACKEND_PROXY_TARGET: http://backend:8000
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./uis:/app
+      - website_node_modules:/app/website/node_modules
+      - backoffice_node_modules:/app/backoffice/node_modules
+    depends_on:
+      - backend
+    networks:
+      - company-network
+
+  backend:
+    build:
+      context: ./services
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./services/api:/app/services/api
+      - backend_venv:/app/services/api/.venv
+      - ./packages:/app/packages
+    networks:
+      - company-network
+
+volumes:
+  website_node_modules:
+  backoffice_node_modules:
+  backend_venv:
+
+networks:
+  company-network:
+    name: company-network
+    driver: bridge
