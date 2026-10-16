@@ -1,10 +1,18 @@
+import { useMemo } from 'react'
 import type { AnalysisResult } from '../types/analysis'
 
 type Props = { analysis: AnalysisResult }
 
 export default function StatusPanel({ analysis }: Props) {
-  const percentage = (value: number) =>
-    analysis.valid_records ? (value / analysis.valid_records) * 100 : 0
+  const statuses = useMemo(() => {
+    return Object.entries(analysis.status_counts).map(([name, count]) => ({
+      name,
+      count,
+      percentage: analysis.valid_records
+        ? (count / analysis.valid_records) * 100
+        : 0,
+    }))
+  }, [analysis.status_counts, analysis.valid_records])
 
   return (
               <section className="panel">
@@ -16,8 +24,8 @@ export default function StatusPanel({ analysis }: Props) {
                 </div>
 
                 <div className="status-list">
-                  {Object.entries(analysis.status_counts).map(
-                    ([status, count]) => (
+                  {statuses.map(
+                    ({ name: status, count, percentage }) => (
                       <div className="status-row" key={status}>
                         <div>
                           <span className={`status-dot ${status.toLowerCase()}`} />
@@ -25,7 +33,7 @@ export default function StatusPanel({ analysis }: Props) {
                         </div>
 
                         <strong>
-                          {count} ({percentage(count).toFixed(1)}%)
+                          {count} ({percentage.toFixed(1)}%)
                         </strong>
                       </div>
                     ),
