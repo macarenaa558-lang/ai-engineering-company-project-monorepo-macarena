@@ -39,5 +39,14 @@ Downloads the latest analysis results as a CSV file.
 ## Run locally
 
 ```bash
-uvicorn services.api.main:app --reload
+cd services/api
+uv sync --frozen
+cp .env.example .env
+# Configure .env with your local test settings before starting.
+uv run uvicorn main:app --workers 1
 ```
+
+Use one worker: analysis results, cache and TinyDB are process-local.
+Docker also explicitly starts Uvicorn with `--workers 1` (without reload).
+Actual email delivery through Resend has not been verified; authentication
+tests do not demonstrate delivery to a real inbox.
