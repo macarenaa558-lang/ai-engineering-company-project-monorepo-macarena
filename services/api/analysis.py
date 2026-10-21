@@ -12,6 +12,12 @@ VALID_CATEGORIES = {
     "STAFF"
 }
 
+VALID_STATUSES = {
+    "OPEN",
+    "CLOSED",
+    "DISCARDED"
+}
+
 
 def validate_record(record):
     errors = []
@@ -34,6 +40,9 @@ def validate_record(record):
 
     if not reporter_id:
         errors.append("missing_reporter")
+
+    if not status or status not in VALID_STATUSES:
+        errors.append("invalid_status")
 
     if status == "CLOSED" and not score:
         errors.append("closed_without_score")
@@ -60,6 +69,7 @@ def analyze_records(rows):
         "invalid_category": 0,
         "empty_description": 0,
         "missing_reporter": 0,
+        "invalid_status": 0,
         "closed_without_score": 0,
         "score_out_of_range": 0
     }

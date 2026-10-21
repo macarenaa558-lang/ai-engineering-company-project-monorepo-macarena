@@ -9,6 +9,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import { authFetch, isAuthenticated } from "./services/auth";
 import IncidentManager from "./components/IncidentManager";
+import IncidentAnalysis from "./components/IncidentAnalysis";
 import "./App.css";
 import InventoryProducts from "./pages/inventory/InventoryProducts";
 import InventoryInbound from "./pages/inventory/InventoryInbound";
@@ -53,9 +54,9 @@ const VALID_CATEGORIES = [
 
 function Backoffice() {
   const navigate = useNavigate();
-  const [section, setSection] = useState<"incidents" | "suppliers">(
-    "incidents",
-  );
+  const [section, setSection] = useState<
+    "incidents" | "analysis" | "suppliers"
+  >("incidents");
 
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [supplierLoading, setSupplierLoading] = useState(false);
@@ -282,6 +283,13 @@ function Backoffice() {
             className={`nav-item ${section === "incidents" ? "active" : ""}`}
             onClick={() => setSection("incidents")}
           >
+            Incident Manager
+          </button>
+
+          <button
+            className={`nav-item ${section === "analysis" ? "active" : ""}`}
+            onClick={() => setSection("analysis")}
+          >
             Incident Analysis
           </button>
 
@@ -309,6 +317,8 @@ function Backoffice() {
       <main className="main-content">
         {section === "incidents" ? (
           <IncidentManager />
+        ) : section === "analysis" ? (
+          <IncidentAnalysis />
         ) : (
           <>
             <header className="page-header">
