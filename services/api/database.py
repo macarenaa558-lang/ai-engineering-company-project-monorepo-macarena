@@ -9,7 +9,8 @@ from tinydb import TinyDB
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
+# API_DATA_DIR permite aislar el almacén TinyDB (pruebas).
+DATA_DIR = Path(os.getenv("API_DATA_DIR") or BASE_DIR / "data")
 
 DATA_DIR.mkdir(exist_ok=True)
 
