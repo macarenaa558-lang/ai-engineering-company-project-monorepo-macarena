@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import Login from "./pages/Login";
@@ -78,8 +78,7 @@ function Backoffice() {
     notes: "",
   });
 
-  
-  const loadSuppliers = async () => {
+  const loadSuppliers = useCallback(async () => {
     setSupplierLoading(true);
     setSupplierError("");
 
@@ -108,13 +107,13 @@ function Backoffice() {
     } finally {
       setSupplierLoading(false);
     }
-  };
+  }, [countryFilter, categoryFilter]);
 
   useEffect(() => {
     if (section === "suppliers") {
       loadSuppliers();
     }
-  }, [section, countryFilter, categoryFilter]);
+  }, [section, loadSuppliers]);
 
   const handleCountryChange = (value: "Colombia" | "USA") => {
     setSupplierForm((current) => ({
