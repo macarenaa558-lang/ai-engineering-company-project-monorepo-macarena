@@ -1,8 +1,4 @@
-"""Casos límite del análisis de incidencias.
-
-Las pruebas marcadas xfail documentan defectos confirmados que quedan
-pendientes de corrección; si se corrigen, strict=True obliga a retirar la marca.
-"""
+"""Casos límite del análisis de incidencias (CSV truncados, estados, cero válidos)."""
 
 import pytest
 
@@ -25,23 +21,45 @@ def test_non_utf8_csv_is_rejected(upload):
     assert upload(b"\xff\xfe\x00bad").status_code == 400
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Fila truncada: DictReader devuelve None y validate_record falla con 500.",
-)
-def test_truncated_row_does_not_return_500(upload):
-    truncated = csv_bytes(GOOD, "BRS-000002,2024-01-15,COL-01,SUPPLY,Sin carb")
-    response = upload(truncated)
-    assert response.status_code in (200, 400)
+def test_truncated_row_is_rejected_with_controlled_error(upload):
+    response = upload(csv_bytes(GOOD, "BRS-000002,2024-01-15,COL-01,SUPPLY,Sin carb"))
+
+    assert response.status_code == 400
+    assert "Record 2 is truncated" in response.json()["detail"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="CSV cortado a mitad del último registro provoca 500.",
-)
-def test_file_cut_mid_record_does_not_return_500(upload, sample_csv):
+def test_row_with_extra_columns_is_rejected(upload):
+    response = upload(csv_bytes(GOOD.rstrip("\n") + ",extra\n"))
+
+    assert response.status_code == 400
+    assert "more columns" in response.json()["detail"]
+
+
+def test_file_cut_mid_record_is_rejected(upload, sample_csv):
     response = upload(sample_csv[: len(sample_csv) // 2])
-    assert response.status_code in (200, 400)
+
+    assert response.status_code == 400
+    assert "truncated" in response.json()["detail"]
+
+
+def test_unterminated_quote_is_rejected(upload):
+    response = upload(csv_bytes(GOOD, 'BRS-000002,2024-01-15,COL-01,SUPPLY,"sin cierre'))
+
+    assert response.status_code == 400
+
+
+def test_failed_upload_keeps_previous_analysis(client, upload, auth_headers, sample_csv):
+    assert upload(sample_csv).status_code == 200
+    before = client.get("/api/incidents/results/summary", headers=auth_headers).json()
+
+    for bad in (csv_bytes(GOOD, "BRS-2,2024"), HEADER.encode(), b"a,b\n1,2\n"):
+        assert upload(bad).status_code == 400
+
+    after = client.get("/api/incidents/results/summary", headers=auth_headers).json()
+    assert after == before
+    exported = client.get("/api/incidents/results/export", headers=auth_headers)
+    assert exported.status_code == 200
+    assert "total_records,100" in exported.text
 
 
 @pytest.mark.parametrize("status", ["PENDING", "closed", ""])
@@ -69,34 +87,22 @@ def test_zero_valid_records_analysis(upload, all_invalid_csv):
     assert body["average_score"] == 0
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Con 0 registros válidos el export divide entre cero (500).",
-)
-def test_zero_valid_records_export(client, upload, all_invalid_csv):
-    upload(all_invalid_csv)
-    assert client.get("/api/incidents/results/export").status_code == 200
-
-
-def test_zero_valid_records_cached_endpoints(client, upload, all_invalid_csv):
+def test_zero_valid_records_export(client, upload, auth_headers, all_invalid_csv):
     upload(all_invalid_csv)
 
-    summary = client.get("/api/incidents/results/summary")
-    categories = client.get("/api/incidents/results/categories")
+    response = client.get("/api/incidents/results/export", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert "valid_records,0" in response.text
+    assert "category_EQUIPMENT,0,0.0" in response.text
+
+
+def test_zero_valid_records_cached_endpoints(client, upload, auth_headers, all_invalid_csv):
+    upload(all_invalid_csv)
+
+    summary = client.get("/api/incidents/results/summary", headers=auth_headers)
+    categories = client.get("/api/incidents/results/categories", headers=auth_headers)
 
     assert summary.status_code == 200 and summary.json()["valid_records"] == 0
     assert categories.status_code == 200
     assert all(item["percentage"] == 0 for item in categories.json())
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="latest_analysis es global: el export de un usuario devuelve el análisis de otro.",
-)
-def test_results_are_not_shared_between_users(client, upload, sample_csv):
-    first = csv_bytes(GOOD)
-    upload(first)
-    assert upload(sample_csv).status_code == 200  # otro usuario sube otro archivo
-
-    exported = client.get("/api/incidents/results/export").text
-    assert "total_records,1\n" in exported.replace("\r\n", "\n")

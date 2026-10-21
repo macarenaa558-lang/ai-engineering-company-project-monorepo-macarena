@@ -301,6 +301,13 @@ function Backoffice() {
 
           <button
             className="nav-item"
+            onClick={() => navigate("/backoffice/inventory/products")}
+          >
+            Inventory
+          </button>
+
+          <button
+            className="nav-item"
             onClick={() => navigate("/account/profile")}
           >
             Mi perfil

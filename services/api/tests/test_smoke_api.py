@@ -137,7 +137,7 @@ def test_incident_manager(client, auth_headers):
     assert client.get("/api/incidents/summary", headers=auth_headers).status_code == 200
 
 
-def test_incident_analysis_and_export(client, upload, sample_csv):
+def test_incident_analysis_and_export(client, upload, auth_headers, sample_csv):
     analysis = upload(sample_csv)
     assert analysis.status_code == 200
     body = analysis.json()
@@ -151,6 +151,6 @@ def test_incident_analysis_and_export(client, upload, sample_csv):
     assert upload(b"a,b", "x.txt").status_code == 400
     assert upload(b"a,b\n1,2\n", "x.csv").status_code == 400
 
-    exported = client.get("/api/incidents/results/export")
+    exported = client.get("/api/incidents/results/export", headers=auth_headers)
     assert exported.status_code == 200
     assert "total_records,100" in exported.text

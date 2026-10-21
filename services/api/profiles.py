@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from auth import get_current_user
 from serialization_schemas import ProfileResponse
-from services import (
+from repository import (
     get_profile_by_user_id,
     update_profile,
 )

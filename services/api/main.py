@@ -2,23 +2,28 @@ import csv
 import io
 import sys
 from pathlib import Path
-from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlmodel import SQLModel
 
-from analysis import analyze_records
-from cache import get_cached, set_cached, invalidate_cache
+import results_store
+from analysis import (
+    CsvFormatError,
+    analyze_records,
+    percentage_of,
+    validate_csv_structure,
+)
+from cache import get_cached, set_cached, invalidate_prefix
 import models
 from database import engine
-from auth import router as auth_router
+from auth import get_current_user, router as auth_router
 from profiles import router as profiles_router
 from routes.suppliers import router as suppliers_router
 from routes.incidents import router as incidents_router
@@ -125,16 +130,31 @@ app.include_router(incidents_router)
 app.include_router(inventory_router)
 
 
-latest_analysis: dict[str, Any] | None = None
+NO_RESULTS = "No analysis results are available yet."
+
+
+def _current_results(user: dict):
+    stored = results_store.get(user["id"])
+
+    if stored is None:
+        raise HTTPException(status_code=404, detail=NO_RESULTS)
+
+    return stored
+
+
+def _cache_key(user: dict, version: int, name: str) -> str:
+    # La versión evita que un cálculo en curso publique datos de un análisis anterior.
+    return f"{user['id']}:{version}:{name}"
 
 
 @app.post(
     "/api/incidents/analyze",
     response_model=IncidentAnalysisResponse,
 )
-async def analyze_incidents(file: UploadFile = File(...)):
-    global latest_analysis
-
+async def analyze_incidents(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
     if not file.filename:
         raise HTTPException(
             status_code=400,
@@ -164,7 +184,7 @@ async def analyze_incidents(file: UploadFile = File(...)):
         )
 
     try:
-        reader = csv.DictReader(io.StringIO(text))
+        reader = csv.DictReader(io.StringIO(text), strict=True)
         rows = list(reader)
     except csv.Error:
         raise HTTPException(
@@ -172,174 +192,84 @@ async def analyze_incidents(file: UploadFile = File(...)):
             detail="The CSV file could not be read."
         )
 
+    try:
+        validate_csv_structure(reader.fieldnames, rows)
+    except CsvFormatError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
     if not rows:
         raise HTTPException(
             status_code=400,
             detail="The CSV file does not contain any records."
         )
 
-    required_columns = {
-        "incident_id",
-        "date",
-        "location_id",
-        "category",
-        "description",
-        "status",
-        "customer_id",
-        "satisfaction_score",
-        "reporter_id"
-    }
+    # Los resultados anteriores solo se reemplazan si todo lo anterior tuvo éxito.
+    analysis = analyze_records(rows)
+    results_store.save(current_user["id"], analysis)
+    invalidate_prefix(f"{current_user['id']}:")
 
-    if reader.fieldnames is None:
-        raise HTTPException(
-            status_code=400,
-            detail="The CSV file does not contain a valid header."
-        )
+    return analysis
 
-    missing_columns = required_columns - set(reader.fieldnames)
 
-    if missing_columns:
-        missing = ", ".join(sorted(missing_columns))
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Missing required CSV columns: {missing}"
-        )
-
-    latest_analysis = analyze_records(rows)
-    invalidate_cache()
-
-    return latest_analysis
+EXPORT_ROWS_ERRORS = [
+    ("missing_location_id", "missing_location"),
+    ("invalid_or_missing_category", "invalid_category"),
+    ("empty_description", "empty_description"),
+    ("missing_reporter_id", "missing_reporter"),
+    ("invalid_status", "invalid_status"),
+    ("closed_without_score", "closed_without_score"),
+    ("score_out_of_range", "score_out_of_range"),
+]
 
 
 @app.get(
     "/api/incidents/results/export",
     response_class=StreamingResponse,
 )
-def export_latest_results():
-    if latest_analysis is None:
-        raise HTTPException(
-            status_code=404,
-            detail="No analysis results are available yet."
-        )
+def export_latest_results(current_user: dict = Depends(get_current_user)):
+    _, analysis = _current_results(current_user)
 
     output = io.StringIO()
-
     writer = csv.DictWriter(
         output,
         fieldnames=["metric", "value", "percentage"]
     )
-
     writer.writeheader()
 
-    writer.writerow({
-        "metric": "total_records",
-        "value": latest_analysis["total_records"],
-        "percentage": ""
-    })
+    def row(metric, value, percentage=""):
+        writer.writerow(
+            {"metric": metric, "value": value, "percentage": percentage}
+        )
 
-    writer.writerow({
-        "metric": "valid_records",
-        "value": latest_analysis["valid_records"],
-        "percentage": ""
-    })
+    row("total_records", analysis["total_records"])
+    row("valid_records", analysis["valid_records"])
+    row("invalid_records", analysis["invalid_records"])
 
-    writer.writerow({
-        "metric": "invalid_records",
-        "value": latest_analysis["invalid_records"],
-        "percentage": ""
-    })
+    for metric, key in EXPORT_ROWS_ERRORS:
+        row(metric, analysis["error_counts"][key])
 
-    error_counts = latest_analysis["error_counts"]
+    valid_records = analysis["valid_records"]
 
-    writer.writerow({
-        "metric": "missing_location_id",
-        "value": error_counts["missing_location"],
-        "percentage": ""
-    })
+    for category, count in analysis["category_counts"].items():
+        row(
+            f"category_{category}",
+            count,
+            f"{percentage_of(count, valid_records):.1f}",
+        )
 
-    writer.writerow({
-        "metric": "invalid_or_missing_category",
-        "value": error_counts["invalid_category"],
-        "percentage": ""
-    })
+    for status, count in analysis["status_counts"].items():
+        row(
+            f"status_{status}",
+            count,
+            f"{percentage_of(count, valid_records):.1f}",
+        )
 
-    writer.writerow({
-        "metric": "empty_description",
-        "value": error_counts["empty_description"],
-        "percentage": ""
-    })
+    row("scored_cases", analysis["scored_cases"])
+    row("closed_cases", analysis["closed_cases"])
+    row("average_score", f"{analysis['average_score']:.2f}")
 
-    writer.writerow({
-        "metric": "missing_reporter_id",
-        "value": error_counts["missing_reporter"],
-        "percentage": ""
-    })
-
-    writer.writerow({
-        "metric": "invalid_status",
-        "value": error_counts["invalid_status"],
-        "percentage": ""
-    })
-
-    writer.writerow({
-        "metric": "closed_without_score",
-        "value": error_counts["closed_without_score"],
-        "percentage": ""
-    })
-
-    writer.writerow({
-        "metric": "score_out_of_range",
-        "value": error_counts["score_out_of_range"],
-        "percentage": ""
-    })
-
-    valid_records = latest_analysis["valid_records"]
-
-    for category, count in latest_analysis["category_counts"].items():
-        percentage = (count / valid_records) * 100
-
-        writer.writerow({
-            "metric": f"category_{category}",
-            "value": count,
-            "percentage": f"{percentage:.1f}"
-        })
-
-    for status, count in latest_analysis["status_counts"].items():
-        percentage = (count / valid_records) * 100
-
-        writer.writerow({
-            "metric": f"status_{status}",
-            "value": count,
-            "percentage": f"{percentage:.1f}"
-        })
-
-    writer.writerow({
-        "metric": "scored_cases",
-        "value": latest_analysis["scored_cases"],
-        "percentage": ""
-    })
-
-    writer.writerow({
-        "metric": "closed_cases",
-        "value": latest_analysis["closed_cases"],
-        "percentage": ""
-    })
-
-    writer.writerow({
-        "metric": "average_score",
-        "value": f"{latest_analysis['average_score']:.2f}",
-        "percentage": ""
-    })
-
-    for score, count in latest_analysis["score_counts"].items():
-        writer.writerow({
-            "metric": f"score_{score}",
-            "value": count,
-            "percentage": ""
-        })
-
-    output.seek(0)
+    for score, count in analysis["score_counts"].items():
+        row(f"score_{score}", count)
 
     headers = {
         "Content-Disposition":
@@ -352,46 +282,47 @@ def export_latest_results():
         headers=headers
     )
 
-@app.get("/api/incidents/results/summary")
-def get_analysis_summary():
-    if latest_analysis is None:
-        raise HTTPException(status_code=404, detail="No analysis results are available yet.")
 
-    cached = get_cached("summary")
+@app.get("/api/incidents/results/summary")
+def get_analysis_summary(current_user: dict = Depends(get_current_user)):
+    version, analysis = _current_results(current_user)
+    key = _cache_key(current_user, version, "summary")
+
+    cached = get_cached(key)
     if cached is not None:
         return cached
 
     result = {
-        "total_records": latest_analysis["total_records"],
-        "valid_records": latest_analysis["valid_records"],
-        "invalid_records": latest_analysis["invalid_records"],
-        "average_score": latest_analysis["average_score"],
-        "closed_cases": latest_analysis["closed_cases"],
+        "total_records": analysis["total_records"],
+        "valid_records": analysis["valid_records"],
+        "invalid_records": analysis["invalid_records"],
+        "average_score": analysis["average_score"],
+        "closed_cases": analysis["closed_cases"],
     }
 
-    set_cached("summary", result)
+    set_cached(key, result)
     return result
 
 
 @app.get("/api/incidents/results/categories")
-def get_analysis_categories():
-    if latest_analysis is None:
-        raise HTTPException(status_code=404, detail="No analysis results are available yet.")
+def get_analysis_categories(current_user: dict = Depends(get_current_user)):
+    version, analysis = _current_results(current_user)
+    key = _cache_key(current_user, version, "categories")
 
-    cached = get_cached("categories")
+    cached = get_cached(key)
     if cached is not None:
         return cached
 
-    total = latest_analysis["valid_records"]
+    total = analysis["valid_records"]
 
     result = [
         {
             "category": category,
             "count": count,
-            "percentage": round(count / total * 100, 1) if total else 0,
+            "percentage": round(percentage_of(count, total), 1),
         }
-        for category, count in latest_analysis["category_counts"].items()
+        for category, count in analysis["category_counts"].items()
     ]
 
-    set_cached("categories", result)
+    set_cached(key, result)
     return result

@@ -18,6 +18,51 @@ VALID_STATUSES = {
     "DISCARDED"
 }
 
+REQUIRED_COLUMNS = {
+    "incident_id",
+    "date",
+    "location_id",
+    "category",
+    "description",
+    "status",
+    "customer_id",
+    "satisfaction_score",
+    "reporter_id"
+}
+
+
+class CsvFormatError(ValueError):
+    """El CSV no tiene una estructura analizable."""
+
+
+def validate_csv_structure(fieldnames, rows):
+    """Rechaza cabeceras incompletas y filas truncadas o con columnas de más."""
+    if fieldnames is None:
+        raise CsvFormatError("The CSV file does not contain a valid header.")
+
+    missing = REQUIRED_COLUMNS - set(fieldnames)
+
+    if missing:
+        raise CsvFormatError(
+            "Missing required CSV columns: " + ", ".join(sorted(missing))
+        )
+
+    for number, row in enumerate(rows, start=1):
+        if None in row:
+            raise CsvFormatError(
+                f"Record {number} has more columns than the header."
+            )
+
+        if any(value is None for value in row.values()):
+            raise CsvFormatError(
+                f"Record {number} is truncated: it has fewer columns "
+                "than the header."
+            )
+
+
+def percentage_of(count, total):
+    return (count / total) * 100 if total else 0.0
+
 
 def validate_record(record):
     errors = []

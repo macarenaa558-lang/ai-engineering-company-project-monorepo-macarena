@@ -1,9 +1,11 @@
 import { lazy, Suspense, useState } from 'react'
 import type { ChangeEvent, DragEvent } from 'react'
 import type { AnalysisResult } from '../types/analysis'
+import { authFetch } from '../services/auth'
 
 const CategoryPanel = lazy(() => import('./CategoryPanel'))
 const StatusPanel = lazy(() => import('./StatusPanel'))
+
 function IncidentAnalysis() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
@@ -49,7 +51,7 @@ function IncidentAnalysis() {
     setError('')
 
     try {
-      const response = await fetch('/api/incidents/analyze', {
+      const response = await authFetch('/api/incidents/analyze', {
         method: 'POST',
         body: formData,
       })
@@ -76,7 +78,7 @@ function IncidentAnalysis() {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch('/api/incidents/results/export')
+      const response = await authFetch('/api/incidents/results/export')
 
       if (!response.ok) {
         throw new Error('The results could not be downloaded.')

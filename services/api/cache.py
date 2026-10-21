@@ -30,10 +30,18 @@ def get_cached(key: str) -> Any | None:
 
 def set_cached(key: str, value: Any) -> None:
     with _lock:
-        _cache[key] = (
-            monotonic() + CACHE_TTL_SECONDS,
-            deepcopy(value),
-        )
+        now = monotonic()
+
+        for stale in [k for k, (exp, _) in _cache.items() if now >= exp]:
+            del _cache[stale]
+
+        _cache[key] = (now + CACHE_TTL_SECONDS, deepcopy(value))
+
+
+def invalidate_prefix(prefix: str) -> None:
+    with _lock:
+        for key in [k for k in _cache if k.startswith(prefix)]:
+            del _cache[key]
 
 
 def invalidate_cache() -> None:

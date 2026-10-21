@@ -7,7 +7,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from services.api.analysis import analyze_records
+from services.api.analysis import (
+    CsvFormatError,
+    analyze_records,
+    percentage_of,
+    validate_csv_structure,
+)
 
 
 def load_csv(file_path):
@@ -26,9 +31,17 @@ def load_csv(file_path):
             encoding="utf-8",
             newline="",
         ) as file:
-            reader = csv.DictReader(file)
-            return list(reader)
-    except (OSError, UnicodeError, csv.Error) as error:
+            reader = csv.DictReader(file, strict=True)
+            rows = list(reader)
+            validate_csv_structure(reader.fieldnames, rows)
+
+            if not rows:
+                raise CsvFormatError(
+                    "The CSV file does not contain any records."
+                )
+
+            return rows
+    except (OSError, UnicodeError, csv.Error, CsvFormatError) as error:
         print(
             f"Error reading CSV file: {error}",
             file=sys.stderr,
@@ -97,7 +110,7 @@ def export_results(output_path, analysis):
     ]
 
     for category, count in category_counts.items():
-        percentage = (count / valid_records) * 100
+        percentage = percentage_of(count, valid_records)
 
         rows.append({
             "metric": f"category_{category}",
@@ -106,7 +119,7 @@ def export_results(output_path, analysis):
         })
 
     for status, count in status_counts.items():
-        percentage = (count / valid_records) * 100
+        percentage = percentage_of(count, valid_records)
 
         rows.append({
             "metric": f"status_{status}",
@@ -220,7 +233,7 @@ def print_analysis(file_path, analysis):
     category_items = list(category_counts.items())
 
     for index, (category, count) in enumerate(category_items):
-        percentage = (count / valid_records) * 100
+        percentage = percentage_of(count, valid_records)
         branch = "└─" if index == len(category_items) - 1 else "├─"
 
         print(
@@ -234,7 +247,7 @@ def print_analysis(file_path, analysis):
     status_items = list(status_counts.items())
 
     for index, (status, count) in enumerate(status_items):
-        percentage = (count / valid_records) * 100
+        percentage = percentage_of(count, valid_records)
         branch = "└─" if index == len(status_items) - 1 else "├─"
 
         print(

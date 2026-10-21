@@ -79,6 +79,7 @@ def ingredient_response(
 )
 def get_products(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     ingredients = db.exec(
         select(Ingredient)
@@ -130,6 +131,7 @@ def create_product(
 def get_product(
     product_id: int,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     ingredient = db.get(
         Ingredient,
@@ -237,6 +239,7 @@ def create_outbound_order(
 )
 def get_orders(
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     entry_statement = (
         select(IngredientEntry, Ingredient)

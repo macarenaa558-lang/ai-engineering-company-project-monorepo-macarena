@@ -13,7 +13,7 @@ from serialization_schemas import (
     UserResponse,
     UserWithProfileResponse,
 )
-from services import (
+from repository import (
     create_user,
     delete_user,
     get_all_users,

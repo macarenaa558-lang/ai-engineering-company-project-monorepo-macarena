@@ -33,3 +33,22 @@ cd services/api && uv sync && uv run pytest
 ```
 
 Las pruebas `xfail` documentan defectos conocidos aún abiertos (ver cada `reason`).
+
+## Resultados del análisis de incidencias: alcance y limitaciones
+
+- `POST /api/incidents/analyze` y `GET /api/incidents/results/{summary,categories,export}` exigen un JWT
+  válido. Los resultados se guardan **por usuario**; cada usuario solo puede consultar o exportar los
+  suyos (404 si no tiene).
+- Una carga fallida (CSV inválido, filas truncadas, columnas de más, sin registros) devuelve 400 y
+  conserva el análisis anterior.
+- Los resultados son **temporales**: viven en la memoria del proceso (`results_store.py`), se pierden al
+  reiniciar y no se expulsan mientras el proceso vive (una entrada por usuario).
+- La caché (`cache.py`, TTL 60 s) usa claves `usuario:versión:nombre`. Cada análisis tiene una versión
+  nueva, así que un cálculo que termina después de una carga más reciente no puede publicar datos
+  obsoletos.
+- **Varios procesos:** resultados y caché son por proceso. Con varios workers o réplicas, un usuario puede
+  llegar a un proceso sin análisis (404) o con uno anterior. Usar un solo worker, enrutamiento por
+  afinidad o un almacén compartido (p. ej. Redis o una tabla) antes de escalar.
+- TinyDB (usuarios, proveedores, incidencias) se serializa con un bloqueo **dentro de un proceso**; no
+  debe compartirse entre procesos.
+- La API de inventario (`/inventory/*`) exige autenticación en todas sus rutas; aún no hay roles.

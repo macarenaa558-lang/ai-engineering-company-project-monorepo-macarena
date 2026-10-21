@@ -5,12 +5,8 @@ load_dotenv() sin sobrescribir las que ya existen en el entorno.
 """
 
 import os
-import sys
 import tempfile
 from pathlib import Path
-
-# Como al arrancar uvicorn desde services/api: `services` debe ser services.py y no el paquete raíz.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 _TMP = Path(tempfile.mkdtemp(prefix="brasaland-tests-"))
 
@@ -40,19 +36,16 @@ def sample_csv() -> bytes:
     return SAMPLE_CSV.read_bytes()
 
 
-# Se importa aquí, antes de que pytest cargue los paquetes padre `services`/`services.api`,
-# para que `services` quede resuelto como services.py y no como el paquete raíz.
-import cache  # noqa: E402
-import main  # noqa: E402
-
-
 @pytest.fixture()
 def app_module():
+    import cache
+    import main
+    import results_store
 
-    main.latest_analysis = None
+    results_store.clear()
     cache.invalidate_cache()
     yield main
-    main.latest_analysis = None
+    results_store.clear()
     cache.invalidate_cache()
 
 
@@ -65,31 +58,41 @@ def client(app_module):
 
 
 @pytest.fixture()
-def auth_headers(client):
+def make_user(client):
+    """Crea un usuario nuevo y devuelve sus cabeceras de autenticación."""
     import uuid
 
-    email = f"user-{uuid.uuid4().hex[:8]}@example.com"
-    password = "Password123"
+    def _make():
+        email = f"user-{uuid.uuid4().hex[:8]}@example.com"
+        password = "Password123"
 
-    created = client.post(
-        "/users", json={"email": email, "password": password, "name": "Test"}
-    )
-    assert created.status_code in (200, 201), created.text
+        created = client.post(
+            "/users", json={"email": email, "password": password, "name": "Test"}
+        )
+        assert created.status_code in (200, 201), created.text
 
-    login = client.post(
-        "/auth/login", data={"username": email, "password": password}
-    )
-    assert login.status_code == 200, login.text
+        login = client.post(
+            "/auth/login", data={"username": email, "password": password}
+        )
+        assert login.status_code == 200, login.text
 
-    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+        return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    return _make
 
 
 @pytest.fixture()
-def upload(client):
-    def _upload(content: bytes, name: str = "incidents.csv"):
+def auth_headers(make_user):
+    return make_user()
+
+
+@pytest.fixture()
+def upload(client, auth_headers):
+    def _upload(content: bytes, name: str = "incidents.csv", headers=None):
         return client.post(
             "/api/incidents/analyze",
             files={"file": (name, content, "text/csv")},
+            headers=auth_headers if headers is None else headers,
         )
 
     return _upload

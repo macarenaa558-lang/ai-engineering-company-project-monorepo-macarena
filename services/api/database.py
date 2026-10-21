@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from threading import RLock
 
 from dotenv import load_dotenv
 from sqlmodel import Session, create_engine
@@ -17,11 +18,33 @@ DATA_DIR.mkdir(exist_ok=True)
 # TinyDB: usuarios, autenticación y datos anteriores
 db = TinyDB(DATA_DIR / "db.json")
 
-users_table = db.table("users")
-profiles_table = db.table("profiles")
-suppliers_table = db.table("suppliers")
-password_reset_tokens_table = db.table("password_reset_tokens")
-incidents_table = db.table("incidents")
+_tinydb_lock = RLock()
+
+
+class _LockedTable:
+    """TinyDB comparte el archivo entre hilos: serializa cada operación de tabla."""
+
+    def __init__(self, table):
+        self._table = table
+
+    def __getattr__(self, name):
+        attribute = getattr(self._table, name)
+
+        if not callable(attribute):
+            return attribute
+
+        def locked(*args, **kwargs):
+            with _tinydb_lock:
+                return attribute(*args, **kwargs)
+
+        return locked
+
+
+users_table = _LockedTable(db.table("users"))
+profiles_table = _LockedTable(db.table("profiles"))
+suppliers_table = _LockedTable(db.table("suppliers"))
+password_reset_tokens_table = _LockedTable(db.table("password_reset_tokens"))
+incidents_table = _LockedTable(db.table("incidents"))
 
 # Supabase/PostgreSQL: inventario
 DATABASE_URL = os.getenv("DATABASE_URL")

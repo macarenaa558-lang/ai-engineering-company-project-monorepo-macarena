@@ -35,3 +35,20 @@ cd services/api && uv sync && uv run pytest
 ```
 
 `xfail` tests document known defects that are still open (see each `reason`).
+
+## Incident analysis results: scope and limitations
+
+- `POST /api/incidents/analyze` and `GET /api/incidents/results/{summary,categories,export}` require a
+  valid JWT. Results are stored **per user**; a user can only read or export their own (404 if none).
+- A failed upload (invalid CSV, truncated rows, extra columns, no records) returns 400 and keeps the
+  previous analysis.
+- Results are **temporary**: kept in process memory (`results_store.py`), lost on restart, and not
+  evicted while the process lives (one entry per user).
+- The cache (`cache.py`, TTL 60 s) is keyed by `user:version:name`. Each analysis gets a new version, so a
+  computation that finishes after a newer upload cannot publish obsolete data.
+- **Multiple processes:** results and cache are per process. With several workers or replicas a user
+  may be routed to a process that has no analysis (404) or an older one. Use a single worker, sticky
+  routing, or move results/cache to a shared store (e.g. Redis or a table) before scaling out.
+- TinyDB (users, suppliers, incidents) is serialized by a lock **inside one process** only; it must not
+  be shared by several processes.
+- The inventory API (`/inventory/*`) requires authentication on every route; there are no roles yet.

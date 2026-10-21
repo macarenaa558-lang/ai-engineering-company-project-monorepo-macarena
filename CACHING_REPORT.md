@@ -32,12 +32,12 @@ Esto evita repetir las transformaciones cuando los datos del análisis no cambia
 
 ## 3. Análisis de endpoints del backend
 
-| Endpoint | Costo de procesamiento | Frecuencia esperada | Cambios en los datos | Decisión |
-|---|---|---|---|---|
-| POST /api/incidents/analyze | Alto en archivos grandes: lectura, validación y análisis de registros | Al cargar informes | Cada carga puede cambiar los resultados | Sin caché |
-| GET /api/incidents/results/export | Medio: genera un archivo CSV con las métricas | Cuando se descarga un informe | Cambia después de un análisis | Sin caché |
-| GET /api/incidents/results/summary | Bajo: selecciona métricas del último análisis | Consultas repetidas del resumen | Cambia después de un análisis | Caché de 60 segundos |
-| GET /api/incidents/results/categories | Bajo: calcula porcentajes por categoría | Consultas repetidas de categorías | Cambia después de un análisis | Caché de 60 segundos |
+| Endpoint                              | Costo de procesamiento                                                | Frecuencia esperada               | Cambios en los datos                    | Decisión             |
+| ------------------------------------- | --------------------------------------------------------------------- | --------------------------------- | --------------------------------------- | -------------------- |
+| POST /api/incidents/analyze           | Alto en archivos grandes: lectura, validación y análisis de registros | Al cargar informes                | Cada carga puede cambiar los resultados | Sin caché            |
+| GET /api/incidents/results/export     | Medio: genera un archivo CSV con las métricas                         | Cuando se descarga un informe     | Cambia después de un análisis           | Sin caché            |
+| GET /api/incidents/results/summary    | Bajo: selecciona métricas del último análisis                         | Consultas repetidas del resumen   | Cambia después de un análisis           | Caché de 60 segundos |
+| GET /api/incidents/results/categories | Bajo: calcula porcentajes por categoría                               | Consultas repetidas de categorías | Cambia después de un análisis           | Caché de 60 segundos |
 
 Los dos últimos endpoints se incorporaron para ofrecer consultas de lectura reutilizables.
 
@@ -103,7 +103,7 @@ No se realizaron todavía mediciones controladas de latencia HTTP antes y despu�
 
 - El caché es local al proceso de Python y no se comparte entre múltiples trabajadores o servidores.
 - Los resultados del análisis también se almacenan en memoria, por lo que se pierden al reiniciar el servidor.
-- Los endpoints de resultados no implementan autenticación ni aislamiento por usuario. Antes de utilizar datos privados en producción, se debe implementar control de acceso y evitar compartir resultados entre usuarios.
+- En la rama de integración, los endpoints de resultados exigen autenticación y los resultados y la caché se separan por usuario y versión de análisis (ver `services/README.md`). Los resultados siguen siendo temporales y por proceso.
 - Para una aplicación distribuida podría utilizarse Redis.
 - Se recomienda medir latencia, tasa de aciertos del caché y comportamiento con archivos grandes.
 - También se recomienda realizar pruebas de integración con cargas reales de CSV y comprobar la experiencia visual del frontend.

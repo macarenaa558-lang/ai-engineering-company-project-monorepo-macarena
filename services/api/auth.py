@@ -16,7 +16,7 @@ from serialization_schemas import (
     MessageResponse,
     TokenResponse,
 )
-from services import (
+from repository import (
     create_password_reset_token,
     get_password_reset_token,
     get_profile_by_user_id,
