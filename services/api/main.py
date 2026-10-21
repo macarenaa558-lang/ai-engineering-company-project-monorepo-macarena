@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from sqlmodel import SQLModel
 
 from analysis import analyze_records
+from cache import get_cached, set_cached, invalidate_cache
 import models
 from database import engine
 from auth import router as auth_router
@@ -206,6 +207,7 @@ async def analyze_incidents(file: UploadFile = File(...)):
         )
 
     latest_analysis = analyze_records(rows)
+    invalidate_cache()
 
     return latest_analysis
 
@@ -349,3 +351,47 @@ def export_latest_results():
         media_type="text/csv",
         headers=headers
     )
+
+@app.get("/api/incidents/results/summary")
+def get_analysis_summary():
+    if latest_analysis is None:
+        raise HTTPException(status_code=404, detail="No analysis results are available yet.")
+
+    cached = get_cached("summary")
+    if cached is not None:
+        return cached
+
+    result = {
+        "total_records": latest_analysis["total_records"],
+        "valid_records": latest_analysis["valid_records"],
+        "invalid_records": latest_analysis["invalid_records"],
+        "average_score": latest_analysis["average_score"],
+        "closed_cases": latest_analysis["closed_cases"],
+    }
+
+    set_cached("summary", result)
+    return result
+
+
+@app.get("/api/incidents/results/categories")
+def get_analysis_categories():
+    if latest_analysis is None:
+        raise HTTPException(status_code=404, detail="No analysis results are available yet.")
+
+    cached = get_cached("categories")
+    if cached is not None:
+        return cached
+
+    total = latest_analysis["valid_records"]
+
+    result = [
+        {
+            "category": category,
+            "count": count,
+            "percentage": round(count / total * 100, 1) if total else 0,
+        }
+        for category, count in latest_analysis["category_counts"].items()
+    ]
+
+    set_cached("categories", result)
+    return result

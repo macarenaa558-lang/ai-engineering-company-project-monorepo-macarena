@@ -1,26 +1,9 @@
-import { useState, type ChangeEvent, type DragEvent } from 'react'
+import { lazy, Suspense, useState } from 'react'
+import type { ChangeEvent, DragEvent } from 'react'
+import type { AnalysisResult } from '../types/analysis'
 
-type AnalysisResult = {
-  total_records: number
-  valid_records: number
-  invalid_records: number
-  error_counts: {
-    missing_location: number
-    invalid_category: number
-    empty_description: number
-    missing_reporter: number
-    invalid_status: number
-    closed_without_score: number
-    score_out_of_range: number
-  }
-  category_counts: Record<string, number>
-  status_counts: Record<string, number>
-  scored_cases: number
-  closed_cases: number
-  average_score: number
-  score_counts: Record<string, number>
-}
-
+const CategoryPanel = lazy(() => import('./CategoryPanel'))
+const StatusPanel = lazy(() => import('./StatusPanel'))
 function IncidentAnalysis() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
@@ -117,14 +100,6 @@ function IncidentAnalysis() {
     }
   }
 
-  const percentage = (value: number) => {
-    if (!analysis || analysis.valid_records === 0) {
-      return 0
-    }
-
-    return (value / analysis.valid_records) * 100
-  }
-
   return (
     <>
     <header className="page-header">
@@ -216,64 +191,13 @@ function IncidentAnalysis() {
         </section>
 
         <div className="analysis-grid">
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="eyebrow">VALID RECORDS</span>
-                <h2>Incidents by category</h2>
-              </div>
-            </div>
+          <Suspense fallback={<p>Loading categories...</p>}>
+            <CategoryPanel analysis={analysis} />
+          </Suspense>
 
-            <div className="bar-list">
-              {Object.entries(analysis.category_counts).map(
-                ([category, count]) => (
-                  <div className="bar-row" key={category}>
-                    <div className="bar-info">
-                      <span>{category.replaceAll('_', ' ')}</span>
-                      <strong>
-                        {count} ({percentage(count).toFixed(1)}%)
-                      </strong>
-                    </div>
-
-                    <div className="bar-track">
-                      <div
-                        className="bar-fill"
-                        style={{
-                          width: `${percentage(count)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ),
-              )}
-            </div>
-          </section>
-
-          <section className="panel">
-            <div className="panel-header">
-              <div>
-                <span className="eyebrow">VALID RECORDS</span>
-                <h2>Incidents by status</h2>
-              </div>
-            </div>
-
-            <div className="status-list">
-              {Object.entries(analysis.status_counts).map(
-                ([status, count]) => (
-                  <div className="status-row" key={status}>
-                    <div>
-                      <span className={`status-dot ${status.toLowerCase()}`} />
-                      {status}
-                    </div>
-
-                    <strong>
-                      {count} ({percentage(count).toFixed(1)}%)
-                    </strong>
-                  </div>
-                ),
-              )}
-            </div>
-          </section>
+          <Suspense fallback={<p>Loading statuses...</p>}>
+            <StatusPanel analysis={analysis} />
+          </Suspense>
         </div>
 
         <div className="analysis-grid">
