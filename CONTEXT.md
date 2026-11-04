@@ -147,9 +147,9 @@ Your script's goal is to validate and summarize this data before it is used as t
 
 ## CSV structure
 
-**File name:** `incidents.csv`  
-**Encoding:** UTF-8  
-**Delimiter:** comma (`,`)  
+**File name:** `incidents.csv`
+**Encoding:** UTF-8
+**Delimiter:** comma (`,`)
 **Header row:** yes (row 1)
 
 | Field                | Type    | Required | Allowed values / format                            |
@@ -300,5 +300,5 @@ incidents-analysis/CONTEXT-brasaland.md
 
 ---
 
-Internal document - 4Geeks Academy · AI Engineering Track  
+Internal document - 4Geeks Academy · AI Engineering Track
 For internal use in program project generation

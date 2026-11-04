@@ -143,7 +143,7 @@ function Profile() {
   style={{ marginBottom: '24px' }}
 >
   ← Volver al Backoffice
-</button>        
+</button>
 
 <div className="profile-header">
           <div>

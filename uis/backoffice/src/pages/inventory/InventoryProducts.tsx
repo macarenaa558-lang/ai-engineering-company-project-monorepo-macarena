@@ -71,7 +71,7 @@ export default function InventoryProducts() {
   return (
     <div className="inventory-page">
         <BackofficeLink />
-        
+
       <div className="inventory-header">
         <div>
           <span className="eyebrow">INVENTARIO</span>
