@@ -1154,3 +1154,77 @@
   background: #f5f6f6;
   border-color: #aeb7b2;
 }
+
+/* =========================
+   BRASALAND - INVENTORY THEME
+   ========================= */
+
+.inventory-page .inventory-nav a:hover,
+.inventory-page .inventory-history-link:hover {
+  background: #fff3df;
+  border-color: #f5ad32;
+  color: #9a5900;
+}
+
+.inventory-page .inventory-nav a:focus-visible,
+.inventory-page .inventory-history-link:focus-visible {
+  outline: 2px solid #f5ad32;
+  outline-offset: 3px;
+}
+
+.inventory-page .inventory-form-group input:focus,
+.inventory-page .inventory-form-group select:focus {
+  outline: 2px solid #f5ad32;
+  outline-offset: 1px;
+  border-color: #f5ad32;
+}
+
+.inventory-page .inventory-submit:not(:disabled) {
+  background: #f5ad32;
+  color: #17251f;
+}
+
+.inventory-page .inventory-submit:not(:disabled):hover {
+  background: #e99b19;
+}
+
+.inventory-page .inventory-actions a {
+  color: #a86200;
+}
+
+.inventory-page .inventory-actions a:hover {
+  color: #744400;
+  text-decoration: underline;
+}
+
+.inventory-page .inventory-table th {
+  color: #a86200;
+}
+
+/* =========================
+   BRASALAND - PERFIL
+   ========================= */
+
+.profile-page .profile-form .auth-submit {
+  background: #f8aa2b;
+  color: #17251f;
+}
+
+.profile-page .profile-form .auth-submit:hover:not(:disabled) {
+  background: #e99b19;
+}
+
+.profile-page .profile-account-info {
+  background: #fff8eb;
+  border: 1px solid #f5dfb7;
+}
+
+.profile-page .profile-account-info span {
+  color: #a86500;
+}
+
+.profile-page .logout-button:hover {
+  background: #fff3df;
+  border-color: #f8aa2b;
+  color: #9a5900;
+}

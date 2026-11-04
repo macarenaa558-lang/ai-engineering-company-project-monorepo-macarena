@@ -135,7 +135,17 @@ function Profile() {
   return (
     <div className="profile-page">
       <div className="profile-card">
-        <div className="profile-header">
+
+<button
+  type="button"
+  className="logout-button"
+  onClick={() => navigate('/backoffice')}
+  style={{ marginBottom: '24px' }}
+>
+  ← Volver al Backoffice
+</button>        
+
+<div className="profile-header">
           <div>
             <span className="eyebrow">MI CUENTA</span>
             <h1>Perfil</h1>
